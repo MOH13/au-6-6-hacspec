@@ -11,7 +11,7 @@ public_nat_mod!(
     type_name: Secp256k1Scalar,
     type_of_canvas: ScalarCanvas,
     bit_size_of_field: 256,
-    modulo_value: "?"
+    modulo_value: "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141"
 );
 
 type Point = (Secp256k1FieldElement, Secp256k1FieldElement);
