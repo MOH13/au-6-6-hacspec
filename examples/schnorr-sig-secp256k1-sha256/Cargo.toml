@@ -5,7 +5,7 @@ authors = ["Viktor Salling <201906430@post.au.dk>", "Mads Overgård Henningsen <
 edition = "2018"
 
 [lib]
-path = "src/lib.rs"
+path = "src/schnorr-sig-secp256k1-sha256.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -13,3 +13,8 @@ path = "src/lib.rs"
 hacspec-lib = { path = "../../lib" }
 hacspec-secp256k1 = { path = "../secp256k1" }
 hacspec-sha256 = { path = "../sha256" }
+
+[dev-dependencies]
+hacspec-dev = { path = "../../utils/dev" }
+quickcheck = "1"
+quickcheck_macros = "1"

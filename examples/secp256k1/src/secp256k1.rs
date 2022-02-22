@@ -70,7 +70,7 @@ pub fn add_points(p: Affine, q: Affine) -> AffineResult {
                 }
             }
         }
-    };
+    }
     result
 }
 

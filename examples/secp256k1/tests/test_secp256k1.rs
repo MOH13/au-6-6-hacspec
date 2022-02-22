@@ -2,7 +2,6 @@ use hacspec_lib::*;
 #[allow(unused_imports)]
 use hacspec_secp256k1::*;
 use hacspec_dev::prelude::*;
-use hacspec_lib::U8;
 
 extern crate quickcheck;
 #[macro_use(quickcheck)]
@@ -25,7 +24,7 @@ impl From<&Affine> for AffineGenerator {
 }
 
 #[derive(Clone, Debug)]
-struct Secp256k1ScalarGenerator(Secp256k1Scalar);
+pub struct Secp256k1ScalarGenerator(Secp256k1Scalar);
 
 impl From<Secp256k1ScalarGenerator> for Secp256k1Scalar {
     fn from(e: Secp256k1ScalarGenerator) -> Secp256k1Scalar {
@@ -54,14 +53,9 @@ impl Arbitrary for AffineGenerator {
 
 impl Arbitrary for Secp256k1ScalarGenerator {
     fn arbitrary(g: &mut Gen) -> Secp256k1ScalarGenerator {
-        let mut a: [u64; 4] = [0; 4];
-        for i in 0..4 {
-            a[i] = u64::arbitrary(g);
-        }
         let mut b: [u8; 32] = [0; 32];
-        for i in 0..4 {
-            let val: u64 = a[i];
-            b[(i * 8)..((i + 1) * 8)].copy_from_slice(&(val.to_le_bytes()));
+        for i in 0..32 {
+            b[i] = u8::arbitrary(g);
         }
         Secp256k1Scalar::from_byte_seq_le(Seq::<U8>::from_public_slice(&b)).into()
     }
@@ -134,7 +128,7 @@ fn test_distributive_scalar_multiplication() {
         add_points(k1p, k2p).unwrap() == kp
     }
     QuickCheck::new()
-        .tests(10)
+        .tests(5)
         .quickcheck(helper as fn(AffineGenerator, Secp256k1ScalarGenerator, Secp256k1ScalarGenerator) -> bool);
 }
 
@@ -148,6 +142,6 @@ fn test_generated_points_on_curve() {
         TestResult::from_bool(is_point_on_curve(p))
     }
     QuickCheck::new()
-        .tests(10)
+        .tests(5)
         .quickcheck(helper as fn(AffineGenerator) -> TestResult);
 }
