@@ -1,5 +1,5 @@
 [package]
-name = "hacspec-schnorr-sig-p256-sha256"
+name = "hacspec-schnorr-sig-secp256k1-sha256"
 version = "0.1.0"
 authors = ["Viktor Salling <201906430@post.au.dk>", "Mads Overgård Henningsen <201906515@post.au.dk>"]
 edition = "2018"
@@ -11,5 +11,5 @@ path = "src/lib.rs"
 
 [dependencies]
 hacspec-lib = { path = "../../lib" }
-hacspec-p256 = { path = "../p256" }
+hacspec-secp256k1 = { path = "../secp256k1" }
 hacspec-sha256 = { path = "../sha256" }

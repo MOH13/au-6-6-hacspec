@@ -25,9 +25,15 @@ public_nat_mod!(
 pub type AffineResult = Result<Affine, Error>;
 pub type Affine = (Secp256k1FieldElement, Secp256k1FieldElement);
 
+/// Checks if the given point is a valid point on the curve
+pub fn is_point_on_curve(p: Affine) -> bool {
+    let (x,y) = p;
+    y * y == x * x * x + Secp256k1FieldElement::from_literal(7u128)
+}
+
 /// Checks whether the given point is the point at infinity
-pub fn is_infinity(p: &Affine) -> bool {
-    p == &INFINITY()
+pub fn is_infinity(p: Affine) -> bool {
+    p == INFINITY()
 }
 
 /// Generates an affine representation of point at infinity (uses a placeholder off the curve)
@@ -48,18 +54,16 @@ pub fn neg_point(p: Affine) -> AffineResult {
 
 pub fn add_points(p: Affine, q: Affine) -> AffineResult {
     let mut result = AffineResult::Err(Error::NoValue);
-    if is_infinity(&p) {
+    if is_infinity(p) {
         result = AffineResult::Ok(q);
     } else {
-        if is_infinity(&q) {
+        if is_infinity(q) {
             result = AffineResult::Ok(p);
         } else {
             if p == q {
                 result = double_point(p);
             } else {
-                let (px,py) = p;
-                let (qx,qy) = q;
-                if px == qx && py + qy == Secp256k1FieldElement::ZERO() {
+                if p == neg_point(q)? {
                     result = AffineResult::Ok(INFINITY());
                 } else {
                     result = add_different_points(p,q);
@@ -74,7 +78,7 @@ pub fn add_points(p: Affine, q: Affine) -> AffineResult {
 fn add_different_points(p: Affine, q: Affine) -> AffineResult {
     let (px,py) = p;
     let (qx,qy) = q;
-    let s = (qy - py) / (qx - px);
+    let s = (qy - py) * (qx - px).inv();
     let s2 = s * s;
     let x3 = s2 - px - qx;
     let y3 = s * (px - x3) - py;
@@ -83,15 +87,15 @@ fn add_different_points(p: Affine, q: Affine) -> AffineResult {
 
 /// Doubles the given point in affine coordinates
 pub fn double_point(p: Affine) -> AffineResult {
-    let (x,y) = p.into();
     let mut result = AffineResult::Err(Error::NoValue);
-    if y.equal(Secp256k1FieldElement::ZERO()) {
+    if p == neg_point(p)? {
         result = AffineResult::Ok(INFINITY())
     } else {
-        let t = (Secp256k1FieldElement::from_literal(3u128) * x * x) / (Secp256k1FieldElement::from_literal(2u128) * y); //Equal to (3 * x * x + CURVE_A) / (2 * y), since a = 0
+        let (x,y) = p.into();
+        let t = (Secp256k1FieldElement::from_literal(3u128) * x * x) * (Secp256k1FieldElement::from_literal(2u128) * y).inv(); //Equal to (3 * x * x + CURVE_A) / (2 * y), since a = 0
         let t2 = t * t;
         let x3 = t2 - Secp256k1FieldElement::TWO() * x;
-        let y3 = t2 * (x - x3) - y;
+        let y3 = t * (x - x3) - y;
         result = AffineResult::Ok((x3, y3))
     };
     result

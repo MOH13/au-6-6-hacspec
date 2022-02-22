@@ -110,3 +110,44 @@ fn test_add_negatives_gives_infty() {
         .tests(5)
         .quickcheck(helper as fn(AffineGenerator) -> bool);
 }
+
+#[test]
+fn base_point_on_curve() {
+    assert!(is_point_on_curve(BASE_POINT()))
+}
+
+#[test]
+fn two_base_point_on_curve() {
+    assert!(is_point_on_curve(double_point(BASE_POINT()).unwrap()))
+}
+
+#[test]
+fn test_distributive_scalar_multiplication() {
+    fn helper(p: AffineGenerator, k1: Secp256k1ScalarGenerator, k2: Secp256k1ScalarGenerator) -> bool {
+        let p = p.into();
+        let k1 = k1.into();
+        let k2 = k2.into();
+        let k = k1 + k2;
+        let k1p = scalar_multiplication(k1, p).unwrap();
+        let k2p = scalar_multiplication(k2, p).unwrap();
+        let kp = scalar_multiplication(k, p).unwrap();
+        add_points(k1p, k2p).unwrap() == kp
+    }
+    QuickCheck::new()
+        .tests(10)
+        .quickcheck(helper as fn(AffineGenerator, Secp256k1ScalarGenerator, Secp256k1ScalarGenerator) -> bool);
+}
+
+#[test]
+fn test_generated_points_on_curve() {
+    fn helper(p: AffineGenerator) -> TestResult {
+        let p = p.into();
+        if is_infinity(p) {
+            return TestResult::discard()
+        }
+        TestResult::from_bool(is_point_on_curve(p))
+    }
+    QuickCheck::new()
+        .tests(10)
+        .quickcheck(helper as fn(AffineGenerator) -> TestResult);
+}
