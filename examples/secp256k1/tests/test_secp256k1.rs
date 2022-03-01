@@ -75,6 +75,31 @@ fn n_base_point_on_curve() {
 }
 
 #[test]
+fn test_associativity() {
+    fn helper(p: AffineGenerator, q: AffineGenerator, r: AffineGenerator) -> bool {
+        let p = p.into();
+        let q = q.into();
+        let r = r.into();
+        add_points(add_points(p, q), r) == add_points(p, add_points(q, r))
+    }
+    QuickCheck::new()
+        .tests(5)
+        .quickcheck(helper as fn(AffineGenerator, AffineGenerator, AffineGenerator) -> bool);
+}
+
+#[test]
+fn test_commutativity() {
+    fn helper(p: AffineGenerator, q: AffineGenerator) -> bool {
+        let p = p.into();
+        let q = q.into();
+        add_points(p, q) == add_points(q, p)
+    }
+    QuickCheck::new()
+        .tests(5)
+        .quickcheck(helper as fn(AffineGenerator, AffineGenerator) -> bool);
+}
+
+#[test]
 fn test_distributive_scalar_multiplication() {
     fn helper(p: AffineGenerator, k1: Secp256k1ScalarGenerator, k2: Secp256k1ScalarGenerator) -> bool {
         let p = p.into();
