@@ -1,15 +1,74 @@
 use hacspec_lib::*;
 #[allow(unused_imports)]
 use hacspec_secp256k1::*;
+use hacspec_schnorr_sig_secp256k1_sha256::*;
 use hacspec_dev::prelude::*;
 
 extern crate quickcheck;
 #[macro_use(quickcheck)]
 extern crate quickcheck_macros;
 
-//#[test]
-//fn test_lots_of_tests() {
-  //  fn helper(sk: Secp256k1ScalarGenerator, k: Secp256k1ScalarGenerator, m: &ByteSeq) {
-    //    s
-    //}
-//}
+include!("../../secp256k1/src/secp256k1_generators.txt");
+
+#[test]
+fn test_lots_of_tests() {
+  fn helper(a: Secp256k1ScalarGenerator, v: Secp256k1ScalarGenerator, m: Vec<u8>) -> TestResult {
+    let a = a.into();
+    let v = v.into(); 
+    if a == Secp256k1Scalar::ZERO() {
+      return TestResult::discard()
+    }
+    if v == Secp256k1Scalar::ZERO() {
+      return TestResult::discard()
+    }
+    let m = ByteSeq::from_vec(m.iter().map(|i| (*i).into()).collect());
+    let A = scalar_multiplication(a, BASE_POINT());
+    let (V,r) = sign(a, A, v, &m);
+    TestResult::from_bool(verify(A, &m, V, r))
+  }
+  QuickCheck::new()
+      .tests(5)
+      .quickcheck(helper as fn(Secp256k1ScalarGenerator, Secp256k1ScalarGenerator, Vec<u8>) -> TestResult);
+}
+
+#[test]
+fn test_wrong_r() {
+  fn helper(a: Secp256k1ScalarGenerator, v: Secp256k1ScalarGenerator, m: Vec<u8>) -> TestResult {
+    let a = a.into();
+    let v = v.into();
+    if a == Secp256k1Scalar::ZERO() {
+      return TestResult::discard()
+    }
+    if v == Secp256k1Scalar::ZERO() {
+      return TestResult::discard()
+    }
+    let m = ByteSeq::from_vec(m.iter().map(|i| (*i).into()).collect());
+    let A = scalar_multiplication(a, BASE_POINT());
+    let (V,r) = sign(a, A, v, &m);
+    TestResult::from_bool(!verify(A, &m, add_points(V, BASE_POINT()), r))
+  }
+  QuickCheck::new()
+      .tests(5)
+      .quickcheck(helper as fn(Secp256k1ScalarGenerator, Secp256k1ScalarGenerator, Vec<u8>) -> TestResult);
+}
+
+#[test]
+fn test_wrong_s() {
+  fn helper(a: Secp256k1ScalarGenerator, v: Secp256k1ScalarGenerator, m: Vec<u8>) -> TestResult {
+    let a = a.into();
+    let v = v.into();
+    if a == Secp256k1Scalar::ZERO() {
+      return TestResult::discard()
+    }
+    if v == Secp256k1Scalar::ZERO() {
+      return TestResult::discard()
+    }
+    let m = ByteSeq::from_vec(m.iter().map(|i| (*i).into()).collect());
+    let A = scalar_multiplication(a, BASE_POINT());
+    let (V,r) = sign(a, A, v, &m);
+    TestResult::from_bool(!verify(A, &m, V, r - Secp256k1Scalar::ONE()))
+  }
+  QuickCheck::new()
+      .tests(5)
+      .quickcheck(helper as fn(Secp256k1ScalarGenerator, Secp256k1ScalarGenerator, Vec<u8>) -> TestResult);
+}

@@ -7,65 +7,13 @@ extern crate quickcheck;
 #[macro_use(quickcheck)]
 extern crate quickcheck_macros;
 
-/// Helper type for generating quickcheck Arbitrary trait
-#[derive(Clone, Debug)]
-struct AffineGenerator(Affine);
-
-impl From<AffineGenerator> for Affine {
-    fn from(e: AffineGenerator) -> Affine {
-        e.0
-    }
-}
-
-impl From<&Affine> for AffineGenerator {
-    fn from(e: &Affine) -> AffineGenerator {
-        AffineGenerator(*e)
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct Secp256k1ScalarGenerator(Secp256k1Scalar);
-
-impl From<Secp256k1ScalarGenerator> for Secp256k1Scalar {
-    fn from(e: Secp256k1ScalarGenerator) -> Secp256k1Scalar {
-        e.0
-    }
-}
-
-impl From<Secp256k1Scalar> for Secp256k1ScalarGenerator {
-    fn from(e: Secp256k1Scalar) -> Secp256k1ScalarGenerator {
-        Secp256k1ScalarGenerator(e)
-    }
-}
-
-use quickcheck::*;
-
-impl Arbitrary for AffineGenerator {
-    fn arbitrary(g: &mut Gen) -> AffineGenerator {
-        let p = BASE_POINT();
-        let res = scalar_multiplication(Secp256k1ScalarGenerator::arbitrary(g).into(), p).unwrap();
-        match g.choose(&[res, INFINITY()]) {
-            Some(v) => v.into(),
-            None => panic!("Whoops"),
-        }
-    }
-}
-
-impl Arbitrary for Secp256k1ScalarGenerator {
-    fn arbitrary(g: &mut Gen) -> Secp256k1ScalarGenerator {
-        let mut b: [u8; 32] = [0; 32];
-        for i in 0..32 {
-            b[i] = u8::arbitrary(g);
-        }
-        Secp256k1Scalar::from_byte_seq_le(Seq::<U8>::from_public_slice(&b)).into()
-    }
-}
+include!("../src/secp256k1_generators.txt");
 
 #[test]
 fn test_infty_add_1() {
     fn helper(p: AffineGenerator) -> bool {
         let p = p.into();
-        let res = add_points(p, INFINITY()).unwrap();
+        let res = add_points(p, INFINITY());
         res == p
     }
     QuickCheck::new()
@@ -78,7 +26,7 @@ fn test_infty_add_1() {
 fn test_infty_add_2() {
     fn helper(p: AffineGenerator) -> bool {
         let p = p.into();
-        let res = add_points(INFINITY(), p).unwrap();
+        let res = add_points(INFINITY(), p);
         res == p
     }
     QuickCheck::new()
@@ -88,7 +36,7 @@ fn test_infty_add_2() {
 
 #[test]
 fn test_infty_add_3() {
-    let res = add_points(INFINITY(), INFINITY()).unwrap();
+    let res = add_points(INFINITY(), INFINITY());
     assert!(res == INFINITY())
 }
 
@@ -96,8 +44,8 @@ fn test_infty_add_3() {
 fn test_add_negatives_gives_infty() {
     fn helper(p: AffineGenerator) -> bool {
         let p = p.into();
-        let minus_p = neg_point(p).unwrap();
-        let res = add_points(p, minus_p).unwrap();
+        let minus_p = neg_point(p);
+        let res = add_points(p, minus_p);
         res == INFINITY()
     }
     QuickCheck::new()
@@ -112,7 +60,18 @@ fn base_point_on_curve() {
 
 #[test]
 fn two_base_point_on_curve() {
-    assert!(is_point_on_curve(double_point(BASE_POINT()).unwrap()))
+    assert!(is_point_on_curve(double_point(BASE_POINT())))
+}
+
+#[test]
+fn n_base_point_on_curve() {
+    fn helper(k: Secp256k1ScalarGenerator) -> bool {
+        let k = k.into();
+        is_point_on_curve(scalar_multiplication(k, BASE_POINT()))
+    }
+    QuickCheck::new()
+        .tests(5)
+        .quickcheck(helper as fn(Secp256k1ScalarGenerator) -> bool);
 }
 
 #[test]
@@ -122,10 +81,10 @@ fn test_distributive_scalar_multiplication() {
         let k1 = k1.into();
         let k2 = k2.into();
         let k = k1 + k2;
-        let k1p = scalar_multiplication(k1, p).unwrap();
-        let k2p = scalar_multiplication(k2, p).unwrap();
-        let kp = scalar_multiplication(k, p).unwrap();
-        add_points(k1p, k2p).unwrap() == kp
+        let k1p = scalar_multiplication(k1, p);
+        let k2p = scalar_multiplication(k2, p);
+        let kp = scalar_multiplication(k, p);
+        add_points(k1p, k2p) == kp
     }
     QuickCheck::new()
         .tests(5)
@@ -143,5 +102,7 @@ fn test_generated_points_on_curve() {
     }
     QuickCheck::new()
         .tests(5)
+        .min_tests_passed(4)
+        .max_tests(10)
         .quickcheck(helper as fn(AffineGenerator) -> TestResult);
 }

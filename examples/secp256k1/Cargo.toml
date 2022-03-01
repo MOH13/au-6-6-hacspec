@@ -10,7 +10,10 @@ path = "src/secp256k1.rs"
 
 [dependencies]
 hacspec-lib = { path = "../../lib" }
+hacspec-attributes = { path = "../../utils/attributes" }
 num-bigint = "0.4"
+quickcheck = "1"
+quickcheck_macros = "1"
 
 [dev-dependencies]
 hacspec-dev = { path = "../../utils/dev" }
