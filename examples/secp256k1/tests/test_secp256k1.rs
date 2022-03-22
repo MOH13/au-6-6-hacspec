@@ -54,20 +54,26 @@ fn test_add_negatives_gives_infty() {
 }
 
 #[test]
+fn test_negative_infty_gives_infty() {
+    let res = neg_point(INFINITY());
+    assert!(res == INFINITY())
+}
+
+#[test]
 fn base_point_on_curve() {
-    assert!(is_point_on_curve(BASE_POINT()))
+    assert!(is_point_on_curve(GENERATOR()))
 }
 
 #[test]
 fn two_base_point_on_curve() {
-    assert!(is_point_on_curve(double_point(BASE_POINT())))
+    assert!(is_point_on_curve(double_point(GENERATOR())))
 }
 
 #[test]
 fn n_base_point_on_curve() {
     fn helper(k: Secp256k1ScalarGenerator) -> bool {
         let k = k.into();
-        is_point_on_curve(scalar_multiplication(k, BASE_POINT()))
+        is_point_on_curve(scalar_multiplication(k, GENERATOR()))
     }
     QuickCheck::new()
         .tests(5)

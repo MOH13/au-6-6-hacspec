@@ -1,5 +1,4 @@
 use hacspec_lib::*;
-use hacspec_attributes::*;
 
 public_nat_mod!(
     type_name: Secp256k1FieldElement,
@@ -31,12 +30,14 @@ pub fn is_infinity(p: Affine) -> bool {
 }
 
 /// Generates an affine representation of point at infinity (uses a placeholder off the curve)
+#[allow(non_snake_case)]
 pub fn INFINITY() -> Affine {
     (Secp256k1FieldElement::ONE(), Secp256k1FieldElement::ZERO())
 }
 
 /// Returns the base point, G, for the Secp256k1 curve in affine coordinates
-pub fn BASE_POINT() -> Affine {
+#[allow(non_snake_case)]
+pub fn GENERATOR() -> Affine {
     (Secp256k1FieldElement::from_byte_seq_be(&byte_seq!(
         0x79u8, 0xBEu8, 0x66u8, 0x7Eu8, 0xF9u8, 0xDCu8, 0xBBu8, 0xACu8,
         0x55u8, 0xA0u8, 0x62u8, 0x95u8, 0xCEu8, 0x87u8, 0x0Bu8, 0x07u8,
@@ -57,6 +58,7 @@ pub fn neg_point(p: Affine) -> Affine {
 }
 
 pub fn add_points(p: Affine, q: Affine) -> Affine {
+    #[allow(unused_assignments)]
     let mut result = INFINITY();
     if is_infinity(p) {
         result = q;
@@ -92,6 +94,7 @@ fn add_different_points(p: Affine, q: Affine) -> Affine {
 
 /// Doubles the given point in affine coordinates
 pub fn double_point(p: Affine) -> Affine {
+    #[allow(unused_assignments)]
     let mut result = INFINITY();
     let neg_p = neg_point(p);
     if p == neg_p {

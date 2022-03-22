@@ -33,7 +33,7 @@ use quickcheck::*;
 
 impl Arbitrary for AffineGenerator {
     fn arbitrary(g: &mut Gen) -> AffineGenerator {
-        let p = BASE_POINT();
+        let p = GENERATOR();
         let k = Secp256k1ScalarGenerator::arbitrary(g).into();
         let res = scalar_multiplication(k, p);
         match g.choose(&[res, INFINITY()]) {

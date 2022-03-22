@@ -2,15 +2,15 @@ use hacspec_lib::*;
 #[allow(unused_imports)]
 use hacspec_secp256k1::*;
 use hacspec_schnorr_sig_secp256k1_sha256::*;
-use hacspec_dev::prelude::*;
 
 extern crate quickcheck;
-#[macro_use(quickcheck)]
+//#[macro_use(quickcheck)]
 extern crate quickcheck_macros;
 
 include!("../../secp256k1/src/secp256k1_generators.txt");
 
 #[test]
+#[allow(non_snake_case)]
 fn test_lots_of_tests() {
   fn helper(a: Secp256k1ScalarGenerator, v: Secp256k1ScalarGenerator, m: Vec<u8>) -> TestResult {
     let a = a.into();
@@ -22,7 +22,7 @@ fn test_lots_of_tests() {
       return TestResult::discard()
     }
     let m = ByteSeq::from_vec(m.iter().map(|i| (*i).into()).collect());
-    let A = scalar_multiplication(a, BASE_POINT());
+    let A = scalar_multiplication(a, GENERATOR());
     let (V,r) = sign(a, A, v, &m);
     TestResult::from_bool(verify(A, &m, V, r))
   }
@@ -32,6 +32,7 @@ fn test_lots_of_tests() {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn test_wrong_r() {
   fn helper(a: Secp256k1ScalarGenerator, v: Secp256k1ScalarGenerator, m: Vec<u8>) -> TestResult {
     let a = a.into();
@@ -43,9 +44,9 @@ fn test_wrong_r() {
       return TestResult::discard()
     }
     let m = ByteSeq::from_vec(m.iter().map(|i| (*i).into()).collect());
-    let A = scalar_multiplication(a, BASE_POINT());
+    let A = scalar_multiplication(a, GENERATOR());
     let (V,r) = sign(a, A, v, &m);
-    TestResult::from_bool(!verify(A, &m, add_points(V, BASE_POINT()), r))
+    TestResult::from_bool(!verify(A, &m, add_points(V, GENERATOR()), r))
   }
   QuickCheck::new()
       .tests(5)
@@ -53,6 +54,7 @@ fn test_wrong_r() {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn test_wrong_s() {
   fn helper(a: Secp256k1ScalarGenerator, v: Secp256k1ScalarGenerator, m: Vec<u8>) -> TestResult {
     let a = a.into();
@@ -64,7 +66,7 @@ fn test_wrong_s() {
       return TestResult::discard()
     }
     let m = ByteSeq::from_vec(m.iter().map(|i| (*i).into()).collect());
-    let A = scalar_multiplication(a, BASE_POINT());
+    let A = scalar_multiplication(a, GENERATOR());
     let (V,r) = sign(a, A, v, &m);
     TestResult::from_bool(!verify(A, &m, V, r - Secp256k1Scalar::ONE()))
   }
