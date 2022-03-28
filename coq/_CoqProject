@@ -23,4 +23,4 @@ src/Hacspec_Hmac.v
 src/Hacspec_P256.v
 # src/Hacspec_Sha3.v # Issues with operations with different types eg ".*" vs "*"
 src/Hacspec_Sha256.v
-# src/Hacspec_Secp256k1.v
+src/Hacspec_Secp256k1.v
