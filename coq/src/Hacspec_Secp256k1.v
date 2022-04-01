@@ -8,6 +8,9 @@ Open Scope hacspec_scope.
 Require Import Hacspec_Lib.
 Import Bool.
 Import GZnZ.
+Import Coq.ZArith.Zdiv.
+Require Import ZDivEucl.
+Require Import Lia.
 
 Definition field_canvas_t := nseq (int8) (32).
 Definition secp256k1_field_element_t :=
@@ -114,7 +117,7 @@ Definition generator  : affine_t :=
 Definition neg_point (p_4 : affine_t) : affine_t :=
   let '(x_5, y_6) :=
     p_4 in 
-  (x_5, (nat_mod_zero ) -% (y_6)).
+  (x_5, nat_mod_neg (y_6)).
 
 Definition add_different_points
   (p_11 : affine_t)
@@ -213,6 +216,18 @@ Definition scalar_multiplication
 
 Notation "p '+'' q" := (add_points p q) (at level 5, left associativity).
 
+Lemma field_elem_small: forall (n : secp256k1_field_element_t), 0 <= n < 115792089237316195423570985008687907853269984665640564039457584007908834671663.
+Proof.
+  intros n.
+  assert (GT: 115792089237316195423570985008687907853269984665640564039457584007908834671663 > 0). {
+    auto with zarith.
+  }
+  pose proof inZnZ 115792089237316195423570985008687907853269984665640564039457584007908834671663 n.
+  pose proof Z_mod_lt n 115792089237316195423570985008687907853269984665640564039457584007908834671663 GT.
+  rewrite <- H in H0.
+  exact H0.
+Qed.
+
 Lemma curve_eq_symm: forall (px py qx qy : secp256k1_field_element_t),
   (px, py) =.? (qx, qy) = (qx, qy) =.? (px, py).
 Proof.
@@ -241,6 +256,16 @@ Proof.
   }
 Qed.
 
+Lemma curve_eq_reflect: forall (p : affine_t), p =.? p = true.
+Proof.
+  intros.
+  simpl.
+  destruct p as (px, py).
+  rewrite -> Z.eqb_refl.
+  rewrite -> Z.eqb_refl.
+  reflexivity.
+Qed.
+
 Lemma infty_is_infty: is_infinity infinity = true.
 Proof.
   unfold is_infinity.
@@ -255,35 +280,146 @@ Proof.
   apply H.
 Qed.
 
-Lemma double_neg: forall (p : affine_t), (p = neg_point (neg_point p)).
+Lemma nat_mod_double_neg: forall (n : secp256k1_field_element_t), nat_mod_neg (nat_mod_neg n) = n.
+Proof.
+  intros n.
+Admitted.
+
+Lemma pos_diff: forall a b, a < b -> b - a > 0.
+Proof.
+  intros a b H.
+  auto with zarith.
+Qed.
+
+Lemma nat_mod_neg_inj: forall (n m : secp256k1_field_element_t), (nat_mod_neg n =? nat_mod_neg m) = true -> (n =? m) = true.
+Proof.
+  intros n m H.
+  destruct (n =? m) eqn:eq1. {
+    reflexivity.
+  } {
+    destruct (n =? @nat_mod_zero 115792089237316195423570985008687907853269984665640564039457584007908834671663) eqn:eq2. {
+      unfold nat_mod_val in eq2.
+      rewrite -> Z.eqb_eq in eq2.
+      unfold nat_mod_neg in H.
+      unfold opp in H.
+      rewrite -> eq2 in H.
+      destruct (n =? m) eqn:eq3. {
+        symmetry in eq1.
+        exact eq1.
+      } {
+        simpl in H.
+        assert (H1: nat_mod_val 115792089237316195423570985008687907853269984665640564039457584007908834671663 m <> 0). {
+          unfold nat_mod_val.
+          simpl in eq2.
+          rewrite -> Zmod_0_l in eq2.
+          rewrite -> Z.eqb_neq in eq3.
+          pose proof Z.neq_sym n m eq3 as eq4.
+          rewrite -> eq2 in eq4.
+          exact eq4.
+        }
+        unfold nat_mod_val in H1.
+        pose proof inZnZ 115792089237316195423570985008687907853269984665640564039457584007908834671663 m.
+        rewrite -> H0 in H1.
+        pose proof Z_mod_nz_opp_full m 115792089237316195423570985008687907853269984665640564039457584007908834671663 H1.
+        rewrite -> H2 in H.
+        rewrite <- H0 in H.
+        assert (H3: m < 115792089237316195423570985008687907853269984665640564039457584007908834671663). {
+          pose proof field_elem_small m.
+          destruct H3 as [_ H4].
+          exact H4.
+        }
+        destruct (115792089237316195423570985008687907853269984665640564039457584007908834671663 - m) eqn:eq4.
+        - lia.
+        - exact H.
+        - lia.
+      }
+    } {
+      unfold nat_mod_neg in H.
+      unfold opp in H.
+      simpl in H.
+      rewrite -> Z.eqb_neq in eq2.
+      simpl in eq2.
+      rewrite -> Zmod_0_l in eq2.
+      rewrite -> (Z_mod_nz_opp_full n 115792089237316195423570985008687907853269984665640564039457584007908834671663) in H.
+      rewrite <- (inZnZ 115792089237316195423570985008687907853269984665640564039457584007908834671663 n) in H.
+      destruct (m =? @nat_mod_zero 115792089237316195423570985008687907853269984665640564039457584007908834671663) eqn:eq3. {
+        rewrite -> Z.eqb_eq in eq3.
+        simpl in eq3.
+        rewrite -> Zmod_0_l in eq3.
+        rewrite -> eq3 in H.
+        rewrite -> Zmod_0_l in H.
+        pose proof field_elem_small n.
+        lia.
+      } {
+        pose proof 
+      }
+    }
+Admitted.
+
+Lemma nat_mod_neg_both: forall (n m : secp256k1_field_element_t), (n =? m) = (nat_mod_neg n =? nat_mod_neg m).
+Proof.
+  intros n m.
+  destruct (n =? m) eqn:eq1. {
+    rewrite -> Z.eqb_eq in eq1.
+    simpl.
+    rewrite -> eq1.
+    rewrite -> Z.eqb_refl.
+    reflexivity.
+  } {
+    destruct (nat_mod_neg n =? nat_mod_neg m) eqn:eq2. {
+      pose proof nat_mod_neg_inj n m eq2 as eq3.
+      rewrite -> eq1 in eq3.
+      inversion eq3.
+    } {
+      reflexivity.
+    }
+  }
+Qed.
+
+Lemma double_neg: forall (p : affine_t), (p =.? neg_point (neg_point p)) = true.
 Proof.
   intros p.
   unfold neg_point.
   destruct p as (px, py).
-  assert (nat_mod_zero -% (nat_mod_zero -% py) = py). {
-    unfold "-%".
-    unfold sub.
-    unfold "nat_mod_zero - py".
-    unfold nat_mod_zero.
-    unfold "- p".
-    simpl.
-    destruct (val 115792089237316195423570985008687907853269984665640564039457584007908834671663 py) eqn:eq1. 
-    - simpl.
-      subst py.
-    Search(GZnZ.znz).
-  } {
+  rewrite -> nat_mod_double_neg.
+  apply curve_eq_reflect.
+Qed.
 
-  }
+Lemma neg_both: forall (p q : affine_t), p =.? q = neg_point p =.? neg_point q.
+Proof.
+  intros p q.
+  destruct p as (px, py).
+  destruct q as (qx, qy).
   simpl.
+  unfold nat_mod_val.
+  f_equal.
+  Check inZnZ 115792089237316195423570985008687907853269984665640564039457584007908834671663.
+Admitted.
+
+Lemma neg_symm_left: forall (p q : affine_t), neg_point p =.? q = true -> p =.? neg_point q = true.
+Proof.
+  intros p q H.
+  rewrite -> eqb_leibniz in H.
+  rewrite <- H.
+  apply double_neg.
+Qed.
 
 Lemma neg_symm: forall (p q : affine_t), (neg_point p =.? q) = (p =.? neg_point q).
 Proof.
   intros p q.
   destruct (neg_point p =.? q) eqn:eq1. {
-    rewrite -> eqb_leibniz in eq1.
-    rewrite <- eq1.
-    Search (?a =.? ?b = true).
+    symmetry.
+    apply neg_symm_left.
+    apply eq1.
+  } {
+    pose proof double_neg p as eq2.
+    rewrite -> eqb_leibniz in eq2.
+    rewrite -> eq2.
+    rewrite <- neg_both.
+    rewrite -> eq1.
+    reflexivity.
   }
+Qed.
 
 Lemma add_infty_1: forall (p: affine_t), infinity +' p =.? p = true.
 Proof.
@@ -291,50 +427,65 @@ Proof.
   unfold add_points.
   destruct (is_infinity infinity) eqn:eq.
   - rewrite -> Hacspec_Lib.eqb_refl.
-    + reflexivity.
+    reflexivity.
   - discriminate eq.
 Qed.
 
-Lemma add_comm: forall (p q : affine_t), add_points p q = add_points q p.
+Lemma add_different_comm: forall (p q : affine_t), add_different_points p q =.? add_different_points q p = true.
+Proof.
+  intros p q.
+  unfold add_different_points.
+Admitted.
+
+Lemma add_comm: forall (p q : affine_t), add_points p q =.? add_points q p = true.
 Proof.
   intros p q.
   unfold add_points.
   unfold nat_mod_val.
   destruct (is_infinity p) eqn:eq1. {
-    destruct (is_infinity q) eqn:eq2. {
-      apply is_infty_means_infty in eq1. {
-        apply is_infty_means_infty in eq2. {
-          rewrite -> eqb_leibniz in eq1. {
-            rewrite -> eqb_leibniz in eq2. {
-              rewrite -> eq1.
-              rewrite -> eq2.
-              reflexivity.
-            }}}}} {
-              reflexivity.
-            }
+    destruct (is_infinity q) eqn:eq2.
+    - apply is_infty_means_infty in eq1.
+      apply is_infty_means_infty in eq2.
+      rewrite -> eqb_leibniz in eq1.
+      rewrite -> eqb_leibniz in eq2.
+      rewrite -> eq1.
+      rewrite -> eq2.
+      reflexivity.
+    - apply curve_eq_reflect.
   } {
     destruct (is_infinity q) eqn:eq2. {
-      reflexivity.
+      apply curve_eq_reflect.
     } {
       destruct p as (px, py) eqn:P1.
       destruct q as (qx, qy) eqn:Q1.
       rewrite -> curve_eq_symm.
       destruct ((qx, qy) =.? (px, py)) eqn:H1. {
         assert (H2: (px, py) = (qx, qy)). {
-          Search (?a =.? ?b = true).
           rewrite -> eqb_leibniz in H1.
           rewrite -> H1.
           reflexivity.
         }
         rewrite H2.
-        reflexivity.
+        apply curve_eq_reflect.
       } {
         destruct ((px, py) =.? neg_point (qx, qy)) eqn:H2. {
-
+          destruct (neg_point (px, py)) as (a0, b0) eqn:eq3.
+          rewrite -> curve_eq_symm with (px:= qx) (py:= qy).
+          rewrite <- eq3.
+          rewrite -> neg_symm.
+          rewrite -> H2.
+          reflexivity.
+        } {
+          destruct (neg_point (px, py)) as (a0, b0) eqn:eq3.
+          rewrite -> curve_eq_symm with (px:= qx) (py:= qy).
+          rewrite <- eq3.
+          rewrite -> neg_symm.
+          rewrite -> H2.
+          apply add_different_comm.
+          (*Missing case: P != Q /\ P != -Q /\ P != infty /\ Q != infty*)
+          (*I.e. add_different_points*)
         }
       }
-      (*Missing case: P = -Q*)
-      (*Missing case: P != Q /\ P != -Q /\ P != infty /\ Q != infty*)
     }
   }
 Qed.
@@ -342,8 +493,5 @@ Qed.
 Lemma add_infty_2: forall (p: affine_t), p +' infinity =.? p = true.
 Proof.
   intros p.
-  unfold add_points.
-  destruct (is_infinity p) eqn:eq1.
-  - destruct (infinity =.? p) eqn:eq2.
-    + reflexivity.
-    + apply is_infty_means_infty in eq1. 
+  apply add_comm.
+Qed.
