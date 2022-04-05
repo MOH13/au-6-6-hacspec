@@ -18,10 +18,10 @@ public_nat_mod!(
 
 pub type Affine = (Secp256k1FieldElement, Secp256k1FieldElement);
 
-/// Checks if the given point is a valid point on the curve
-pub fn is_point_on_curve(p: Affine) -> bool {
-    let (x,y) = p;
-    is_infinity(p) || y * y == x * x * x + Secp256k1FieldElement::from_literal(7u128)
+/// Generates an affine representation of point at infinity (uses a placeholder off the curve)
+#[allow(non_snake_case)]
+pub fn INFINITY() -> Affine {
+    (Secp256k1FieldElement::ONE(), Secp256k1FieldElement::ZERO())
 }
 
 /// Checks whether the given point is the point at infinity
@@ -29,12 +29,12 @@ pub fn is_infinity(p: Affine) -> bool {
     p == INFINITY()
 }
 
-/// Generates an affine representation of point at infinity (uses a placeholder off the curve)
-#[allow(non_snake_case)]
-pub fn INFINITY() -> Affine {
-    (Secp256k1FieldElement::ONE(), Secp256k1FieldElement::ZERO())
-}
 
+/// Checks if the given point is a valid point on the curve
+pub fn is_point_on_curve(p: Affine) -> bool {
+    let (x,y) = p;
+    is_infinity(p) || y * y == x * x * x + Secp256k1FieldElement::from_literal(7u128)
+}
 /// Returns the base point, G, for the Secp256k1 curve in affine coordinates
 #[allow(non_snake_case)]
 pub fn GENERATOR() -> Affine {
@@ -54,31 +54,7 @@ pub fn GENERATOR() -> Affine {
 
 pub fn neg_point(p: Affine) -> Affine {
     let (x,y) = p;
-    (x, Secp256k1FieldElement::ZERO() - y)
-}
-
-pub fn add_points(p: Affine, q: Affine) -> Affine {
-    #[allow(unused_assignments)]
-    let mut result = INFINITY();
-    if is_infinity(p) {
-        result = q;
-    } else {
-        if is_infinity(q) {
-            result = p;
-        } else {
-            if p == q {
-                result = double_point(p);
-            } else {
-                let neg_q = neg_point(q);
-                if p == neg_q {
-                    result = INFINITY();
-                } else {
-                    result = add_different_points(p,q);
-                }
-            }
-        }
-    }
-    result
+    (x, y.neg())
 }
 
 /// Helper function for add_points
@@ -107,6 +83,30 @@ pub fn double_point(p: Affine) -> Affine {
         let y3 = t * (x - x3) - y;
         result = (x3, y3)
     };
+    result
+}
+
+pub fn add_points(p: Affine, q: Affine) -> Affine {
+    #[allow(unused_assignments)]
+    let mut result = INFINITY();
+    if is_infinity(p) {
+        result = q;
+    } else {
+        if is_infinity(q) {
+            result = p;
+        } else {
+            if p == q {
+                result = double_point(p);
+            } else {
+                let neg_q = neg_point(q);
+                if p == neg_q {
+                    result = INFINITY();
+                } else {
+                    result = add_different_points(p,q);
+                }
+            }
+        }
+    }
     result
 }
 
