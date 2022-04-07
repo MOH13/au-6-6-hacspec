@@ -517,29 +517,33 @@ Proof.
       intuition.
 Qed.
 
-Lemma neg_symm_left: forall (p q : affine_t), neg_point p =.? q = true -> p =.? neg_point q = true.
-Proof.
-  intros p q H.
-  rewrite -> eqb_leibniz in H.
-  rewrite <- H.
-  apply double_neg.
-Qed.
-
-Lemma neg_symm: forall (p q : affine_t), (neg_point p =.? q) = (p =.? neg_point q).
+Lemma neg_symm: forall (p q : affine_t), neg_point p = q <-> p = neg_point q.
 Proof.
   intros p q.
-  destruct (neg_point p =.? q) eqn:eq1. {
-    symmetry.
-    apply neg_symm_left.
-    apply eq1.
-  } {
-    pose proof double_neg p as eq2.
-    rewrite -> eqb_leibniz in eq2.
-    rewrite -> eq2.
-    rewrite <- neg_both.
-    rewrite -> eq1.
+  destruct p as (px, py).
+  destruct q as (qx, qy).
+  split.
+  - intros H.
+    unfold neg_point in H.
+    rewrite pair_equal_spec in H.
+    destruct H as [H0 H1].
+    rewrite <- nat_mod_double_neg in H1.
+    apply nat_mod_neg_inj in H1.
+    unfold neg_point.
+    rewrite H0.
+    rewrite H1.
     reflexivity.
-  }
+  - intros H.
+    unfold neg_point in H.
+    rewrite pair_equal_spec in H.
+    destruct H as [H0 H1].
+    unfold neg_point.
+    rewrite pair_equal_spec.
+    split.
+    + apply H0.
+    + rewrite <- (nat_mod_double_neg py) in H1.
+      apply nat_mod_neg_inj in H1.
+      exact H1.
 Qed.
 
 Lemma add_infty_1: forall (p: affine_t), infinity +' p = p.
@@ -587,19 +591,26 @@ Proof.
         reflexivity.
       } {
         destruct ((px, py) =.? neg_point (qx, qy)) eqn:H2. {
-          destruct (neg_point (px, py)) as (a0, b0) eqn:eq3.
-          rewrite -> curve_eq_symm with (px:= qx) (py:= qy).
-          rewrite <- eq3.
-          rewrite -> neg_symm.
-          rewrite -> H2.
+          rewrite eqb_leibniz in H2.
+          rewrite <- neg_symm in H2.
+          rewrite H2.
+          simpl.
+          rewrite Z.eqb_refl.
+          rewrite Z.eqb_refl.
+          simpl.
           reflexivity.
         } {
-          destruct (neg_point (px, py)) as (a0, b0) eqn:eq3.
-          rewrite -> curve_eq_symm with (px:= qx) (py:= qy).
-          rewrite <- eq3.
-          rewrite -> neg_symm.
-          rewrite -> H2.
-          apply add_different_comm.
+          destruct ((qx, qy) =.? neg_point (px, py)) eqn:eq3. {
+            rewrite eqb_leibniz in eq3.
+            symmetry in eq3.
+            rewrite neg_symm in eq3.
+            rewrite eq3 in H2.
+            pose proof (curve_eq_reflect (neg_point (qx, qy))) as H.
+            rewrite H in H2.
+            discriminate H2.
+          } {
+            apply add_different_comm.
+          }
           (*Missing case: P != Q /\ P != -Q /\ P != infty /\ Q != infty*)
           (*I.e. add_different_points*)
         }
@@ -608,10 +619,9 @@ Proof.
   }
 Qed.
 
-Lemma add_infty_2: forall (p: affine_t), p +' infinity =.? p = true.
+Lemma add_infty_2: forall (p: affine_t), p +' infinity = p.
 Proof.
   intros p.
-  Search (Z.to_nat ?a).
   apply add_comm.
 Qed.
 
@@ -620,17 +630,39 @@ Proof.
   intros p q r.
   destruct (is_infinity p) eqn:eq1. {
     apply (is_infty_means_infty p) in eq1.
-    rewrite eqb_leibniz in eq1.
     rewrite eq1.
-    rewrite <- eqb_leibniz.
     apply add_infty_1.
   } {
     destruct (is_infinity q) eqn:eq2. {
       apply (is_infty_means_infty q) in eq2.
-      rewrite eqb_leibniz in eq2.
       rewrite eq2.
-      rewrite <- eqb_leibniz.
-      apply add_infty_2.
+      rewrite (add_infty_2 p).
+      rewrite (add_infty_1 r).
+      reflexivity.
+    } {
+      destruct (is_infinity r) eqn:eq3. {
+        apply (is_infty_means_infty r) in eq3.
+        rewrite eq3.
+        rewrite add_infty_2, add_infty_2.
+        reflexivity.
+      } {
+        destruct (p =.? q) eqn:eq4. {
+          unfold "+'".
+          rewrite eq1, eq2, eq3, eq4.
+          destruct (q =.? r) eqn:eq5. {
+            rewrite eqb_leibniz in eq4.
+            rewrite eqb_leibniz in eq5.
+            rewrite eq5 in eq4.
+            rewrite eq4, eq5.
+          }
+          apply is_infty_means_infty in eq4.
+          rewrite eq3, add_infty_1.
+        }
+      }
+      unfold "+'".
+      rewrite -> eq1.
+      rewrite -> eq2.
+      simpl.
     }
   }
 Admitted.
