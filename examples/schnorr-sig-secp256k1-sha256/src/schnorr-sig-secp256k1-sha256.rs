@@ -15,7 +15,8 @@ pub fn sign(a: Secp256k1Scalar, A: Affine, v: Secp256k1Scalar, m: &ByteSeq) -> (
 }
 
 #[allow(non_snake_case)]
-pub fn verify(A: Affine, m: &ByteSeq, V: Affine, r: Secp256k1Scalar) -> bool {
+pub fn verify(A: Affine, m: &ByteSeq, signature : (Affine, Secp256k1Scalar)) -> bool {
+    let (V, r) = signature;
     let g = GENERATOR();
     let (Vx, Vy) = V;
     let (Ax, Ay) = A;

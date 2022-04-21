@@ -23,8 +23,8 @@ fn test_lots_of_tests() {
     }
     let m = ByteSeq::from_vec(m.iter().map(|i| (*i).into()).collect());
     let A = scalar_multiplication(a, GENERATOR());
-    let (V,r) = sign(a, A, v, &m);
-    TestResult::from_bool(verify(A, &m, V, r))
+    let sig = sign(a, A, v, &m);
+    TestResult::from_bool(verify(A, &m, sig))
   }
   QuickCheck::new()
       .tests(5)
@@ -33,6 +33,7 @@ fn test_lots_of_tests() {
 
 #[test]
 #[allow(non_snake_case)]
+// Not technically always true, but incredibly likely
 fn test_wrong_r() {
   fn helper(a: Secp256k1ScalarGenerator, v: Secp256k1ScalarGenerator, m: Vec<u8>) -> TestResult {
     let a = a.into();
@@ -46,7 +47,7 @@ fn test_wrong_r() {
     let m = ByteSeq::from_vec(m.iter().map(|i| (*i).into()).collect());
     let A = scalar_multiplication(a, GENERATOR());
     let (V,r) = sign(a, A, v, &m);
-    TestResult::from_bool(!verify(A, &m, add_points(V, GENERATOR()), r))
+    TestResult::from_bool(!verify(A, &m, (add_points(V, GENERATOR()), r)))
   }
   QuickCheck::new()
       .tests(5)
@@ -55,6 +56,7 @@ fn test_wrong_r() {
 
 #[test]
 #[allow(non_snake_case)]
+// Not technically always true, but incredibly likely
 fn test_wrong_s() {
   fn helper(a: Secp256k1ScalarGenerator, v: Secp256k1ScalarGenerator, m: Vec<u8>) -> TestResult {
     let a = a.into();
@@ -68,7 +70,7 @@ fn test_wrong_s() {
     let m = ByteSeq::from_vec(m.iter().map(|i| (*i).into()).collect());
     let A = scalar_multiplication(a, GENERATOR());
     let (V,r) = sign(a, A, v, &m);
-    TestResult::from_bool(!verify(A, &m, V, r - Secp256k1Scalar::ONE()))
+    TestResult::from_bool(!verify(A, &m, (V, r - Secp256k1Scalar::ONE())))
   }
   QuickCheck::new()
       .tests(5)
