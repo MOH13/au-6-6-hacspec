@@ -11,19 +11,22 @@ Import GZnZ.
 Import Coq.ZArith.Zdiv.
 Require Import ZDivEucl BinIntDef.
 Require Import Lia.
-Require ZArithRing.
+Require Import Znumtheory Field_theory Field.
 From Coqprime Require GZnZ.
+
+Definition elem_max := 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F.
+Definition scalar_max := 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141.
 
 Definition field_canvas_t := nseq (int8) (32).
 Definition secp256k1_field_element_t :=
-  nat_mod 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F.
+  nat_mod elem_max.
 
 Definition scalar_bits_v : uint_size :=
   usize 256.
 
 Definition scalar_canvas_t := nseq (int8) (32).
 Definition secp256k1_scalar_t :=
-  nat_mod 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141.
+  nat_mod scalar_max.
 
 Notation "'affine_t'" := ((
   secp256k1_field_element_t ×
@@ -39,9 +42,9 @@ Definition is_infinity (p_3 : affine_t) : bool :=
 Definition is_point_on_curve (p_0 : affine_t) : bool :=
   let '(x_1, y_2) :=
     p_0 in 
-  (is_infinity (p_0)) || (((y_2) *% (y_2)) =.? ((((x_1) *% (x_1)) *% (x_1)) +% (
+  (is_infinity (p_0)) || (nat_mod_exp (y_2) (@repr WORDSIZE32 2) =.? ((nat_mod_exp (x_1) (@repr WORDSIZE32 3)) +% (
         nat_mod_from_literal (
-          0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F) (
+          elem_max) (
           @repr WORDSIZE128 7) : secp256k1_field_element_t))).
 
 Definition generator  : affine_t :=
@@ -151,10 +154,10 @@ Definition double_point (p_21 : affine_t) : affine_t :=
         p_21 in 
       let t_26 : secp256k1_field_element_t :=
         (((nat_mod_from_literal (
-                0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F) (
+                elem_max) (
                 @repr WORDSIZE128 3) : secp256k1_field_element_t) *% (
               x_24)) *% (x_24)) *% (nat_mod_inv ((nat_mod_from_literal (
-                0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F) (
+                elem_max) (
                 @repr WORDSIZE128 2) : secp256k1_field_element_t) *% (
               y_25))) in 
       let t2_27 : secp256k1_field_element_t :=
@@ -216,71 +219,315 @@ Definition scalar_multiplication
     q_32 in 
   q_32.
 
-Notation elem_max := 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F.
-Notation scalar_max := 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141.
-
 Lemma zero_less_than_elem_max: 0 < elem_max.
 Proof.
+  unfold elem_max.
   intuition.
 Qed.
 
-Check GZnZ.RZnZ.
-Add Ring RZnZ : (GZnZ.RZnZ elem_max zero_less_than_elem_max).
+Lemma zero_less_than_scalar_max: 0 < scalar_max.
+Proof.
+  unfold scalar_max.
+  intuition.
+Qed.
 
 Notation "p '+'' q" := (add_points p q) (at level 5, left associativity).
 Notation "k '*'' p" := (scalar_multiplication k p) (at level 4, right associativity).
 
-Lemma nat_mod_small: forall (max : Z), forall (n : nat_mod max), max > 0 -> 0 <= n < max.
-Proof.
-  intros max n H.
-  pose proof inZnZ max n.
-  pose proof Z_mod_lt n max H.
-  rewrite <- H0 in H1.
-  exact H1.
+Section nat_mod.
+
+Variable max: Z.
+Variable max_prime: prime max.
+
+Definition nat_mod_eq (a b : nat_mod max) := a = b.
+
+Add Field FZpZ : (GZnZ.FZpZ max max_prime).
+
+Theorem max_pos: 0 < max.
+  generalize (prime_ge_2 _ max_prime); auto with zarith.
 Qed.
+
+Definition nat_mod_FZpZ: field_theory nat_mod_zero nat_mod_one nat_mod_add nat_mod_mul nat_mod_sub nat_mod_neg nat_mod_div nat_mod_inv (@Logic.eq (nat_mod max)).
+Proof.
+  split.
+  - split.
+    + unfold nat_mod.
+      unfold nat_mod_eq.
+      unfold nat_mod_zero.
+      unfold "+%".
+      intros x.
+      ring.
+    + unfold nat_mod.
+      intros x y.
+      unfold "+%".
+      ring.
+    + unfold nat_mod.
+      intros x y z.
+      unfold "+%".
+      ring.
+    + unfold nat_mod.
+      intros x.
+      unfold "*%".
+      unfold nat_mod_one.
+      ring.
+    + unfold nat_mod.
+      intros x y.
+      unfold "*%".
+      ring.
+    + unfold nat_mod.
+      intros x y z.
+      unfold "*%".
+      ring.
+    + unfold nat_mod.
+      intros x y z.
+      unfold "+%".
+      unfold "*%".
+      ring.
+    + unfold nat_mod.
+      intros x y.
+      unfold "-%".
+      unfold nat_mod_neg.
+      unfold "+%".
+      ring.
+    + unfold nat_mod.
+      intros x.
+      unfold "+%".
+      unfold nat_mod_neg.
+      unfold nat_mod_zero.
+      ring.
+  - pose proof prime_ge_2 _ max_prime.
+    unfold nat_mod_one.
+    unfold nat_mod_zero.
+    unfold one.
+    unfold zero.  
+    assert (H1: 1 < max). { lia. }
+    Check (Zmod_1_l max H1).
+    pose proof (Zmod_1_l max H1).
+    assert (1 mod max <> 0 mod max). {
+      rewrite H0.
+      unfold "mod".
+      simpl.
+      intuition.
+    }
+    intuition.
+    inversion H3.
+    apply H2 in H5.
+    contradiction.
+  - unfold nat_mod.
+    intros p q.
+    unfold "/%", "*%", nat_mod_div, nat_mod_inv.
+    unfold div.
+    reflexivity.
+  - unfold nat_mod.
+    intros p H.
+    unfold nat_mod_zero in H.
+    unfold nat_mod_inv, nat_mod_one, "*%".
+    field.
+    exact H.
+Qed.
+
+Add Field nat_mod_FZpZ : nat_mod_FZpZ.
+
+Lemma nat_mod_small: forall (n : nat_mod max), 0 <= n < max.
+Proof.
+  intros n.
+  pose proof inZnZ max n.
+  pose proof Z_mod_lt n max (Z.lt_gt _ _ max_pos).
+  rewrite <- H in H0.
+  exact H0.
+Qed.
+
+Lemma small_to_nat_mod: forall (a : Z), 0 <= a < max -> exists (b : nat_mod max), a =? b = true.
+Proof.
+  intros a H.
+  pose proof (Zmod_small a max H).
+  symmetry in H0.
+  remember (mkznz max a H0) as b.
+  exists b.
+  rewrite Heqb.
+  simpl.
+  rewrite Z.eqb_eq.
+  reflexivity.
+Qed.
+
+Lemma nat_mod_double_neg: forall (x : nat_mod max), nat_mod_neg (nat_mod_neg x) = x.
+Proof.
+  intros x.
+  ring.
+Qed.
+
+Lemma nat_mod_neg_inj: forall (n m : nat_mod max), nat_mod_neg n = nat_mod_neg m -> n = m.
+Proof.
+  intros n m H.
+  rewrite <- nat_mod_double_neg.
+  rewrite <- H.
+  rewrite nat_mod_double_neg.
+  reflexivity.
+Qed.
+
+Lemma nat_mod_neg_both: forall (n m : nat_mod max), n = m <-> nat_mod_neg n = nat_mod_neg m.
+Proof.
+  intros n m.
+  split.
+  - intros H.
+    rewrite H.
+    reflexivity.
+  - intros H.
+    apply nat_mod_neg_inj.
+    exact H.
+Qed.
+
+Lemma nat_mod_neg_symm: forall (x y : nat_mod max), nat_mod_neg x = y <-> x = nat_mod_neg y.
+Proof.
+  intros x y.
+  split.
+  - intros H.
+    rewrite <- H.
+    rewrite nat_mod_double_neg.
+    reflexivity.
+  - intros H.
+    rewrite H.
+    rewrite nat_mod_double_neg.
+    reflexivity.
+Qed.
+
+Lemma one_minus_mod2: forall (x : Z), x mod 2 <> (1 - x mod 2) mod 2.
+Proof.
+  intros x.
+  destruct (x mod 2 =? 0) eqn:eq1.
+  - rewrite Z.eqb_eq in eq1.
+    rewrite eq1.
+    simpl.
+    unfold "mod".
+    simpl.
+    intuition.
+  - rewrite Z.eqb_neq in eq1.
+    assert (x mod 2 = 1). {
+      assert (0 < 2). { lia. }
+      pose proof Zmod_pos_bound x 2 H.
+      lia.
+    }
+    rewrite H.
+    unfold "mod".
+    simpl.
+    intuition. 
+Qed.
+
+Lemma nat_mod_neg_not_zero: forall (x : nat_mod max), (max mod 2 = 1) -> (x =? nat_mod_neg x) = (x =? 0).
+Proof.
+  intros x H.
+  destruct (x =? nat_mod_neg x) eqn:eq1. {
+    rewrite Z.eqb_eq in eq1.
+    unfold nat_mod_neg in eq1.
+    unfold opp in eq1.
+    simpl in eq1.
+    destruct (x =? 0) eqn:eq2.
+    - reflexivity.
+    - rewrite Z.eqb_neq in eq2.
+      rewrite inZnZ in eq2.
+      pose proof Z_mod_nz_opp_full x max eq2.
+      rewrite H0 in eq1.
+      rewrite <- inZnZ in eq1.
+      assert (x mod 2 = (max - x) mod 2). {
+        rewrite <- eq1. reflexivity.
+      }
+      rewrite Zminus_mod in H1.
+      rewrite H in H1.
+      pose proof one_minus_mod2 x.
+      intuition.
+  } {
+    rewrite Z.eqb_neq in eq1.
+    simpl in eq1.
+    destruct (x =? 0) eqn:eq2.
+      - rewrite Z.eqb_eq in eq2.
+        rewrite eq2 in eq1.
+        unfold "mod" in eq1.
+        simpl in eq1.
+        intuition.
+      - reflexivity.
+  }
+Qed.
+
+Lemma mod_diff_helper: forall (a b : nat_mod max), (a - b <> 0) -> (a - b) mod max <> 0.
+Proof.
+  intros a b H1.
+  pose proof nat_mod_small a as H2.
+  pose proof nat_mod_small b as H3.
+  assert (H4: Z.opp max < a - b < max). { lia. }
+  destruct (a - b >? 0) eqn:eq1. {
+    assert (H5: 0 <= a - b < max). { lia. }
+    pose proof Zmod_small _ _ H5.
+    intuition.
+  } {
+    assert (H5: 0 <= b - a < max). { lia. }
+    assert (H6: a - b = Z.opp (b - a)). { lia. }
+    pose proof Zmod_small _ _ H5 as H7.
+    rewrite H6.
+    assert (H8: (b - a) mod max <> 0). { lia. }
+    pose proof Z_mod_nz_opp_full _ _ H8 as H9.
+    rewrite H9.
+    rewrite H7.
+    lia.
+  }
+Qed.
+
+Lemma nat_mod_neq_diff: forall (a b : nat_mod max), (a <> b) -> (a -% b <> nat_mod_zero).
+Proof.
+  intros a b H.
+  unfold "-%".
+  unfold sub.
+  unfold nat_mod_zero.
+  assert (a - b <> 0). {
+    simpl.
+    intuition.
+    destruct a as (a', inZnZa).
+    destruct b as (b', inZnZb).
+    simpl in H0.
+    assert (a' = b'). { lia. }
+    pose proof (zirr _ _ _ inZnZa inZnZb H1).
+    intuition.
+  }
+  pose proof mod_diff_helper a b H0.
+  intuition.
+  inversion H2.
+  rewrite Zmod_0_l in H4.
+  intuition.
+Qed.
+
+Lemma flip_division: forall (a b c d : nat_mod max), (c <> d) -> (a -% b) *% nat_mod_inv (c -% d) = (b -% a) *% nat_mod_inv (d -% c).
+Proof.
+  intros a b c d H.
+  field.
+  pose proof nat_mod_neq_diff c d H.
+  apply not_eq_sym in H.
+  pose proof nat_mod_neq_diff d c H.
+  apply (conj H1) in H0.
+  exact H0.
+Qed.
+
+Definition nat_mod_root (x : nat_mod max) (a : int128) := nat_mod_exp_def x (val max (nat_mod_inv (nat_mod_from_literal max a))).
+
+End nat_mod.
+
+Axiom elem_max_prime: prime elem_max.
+Axiom scalar_max_prime: prime scalar_max.
+
+Definition field_elem_FZpZ := (nat_mod_FZpZ elem_max elem_max_prime).
+Definition scalar_FZpZ := (nat_mod_FZpZ scalar_max scalar_max_prime).
+
+Add Field field_elem_FZpZ : field_elem_FZpZ.
+Add Field scalar_FZpZ : scalar_FZpZ.
 
 Lemma field_elem_small: forall (n : secp256k1_field_element_t), 0 <= n < elem_max.
 Proof.
   intros n.
-  assert (H: elem_max > 0). { lia. }
-  apply (nat_mod_small elem_max n H).
+  apply (nat_mod_small elem_max elem_max_prime n).
 Qed.
 
 Lemma scalar_small: forall (n : secp256k1_scalar_t), 0 <= n < scalar_max.
 Proof.
-  intros n.
-  assert (H: scalar_max > 0). { lia. }
-  apply (nat_mod_small scalar_max n H).
-Qed.
-
-Lemma small_to_nat_mod: forall (n : Z), forall (a : Z), 0 <= a < n -> exists (b : nat_mod n), a =? b = true.
-Proof.
-  intros n a H.
-  pose proof (Zmod_small a n H).
-  symmetry in H0.
-  remember (mkznz n a H0) as b.
-  assert (H1: (a =? b) = true). {
-    unfold "=?".
-    unfold val.
-    rewrite -> Heqb.
-    destruct a eqn:eq1. {
-      reflexivity.
-    } {
-      rewrite -> Pos.eqb_refl.
-      reflexivity.
-    } {
-      rewrite -> Pos.eqb_refl.
-      reflexivity.
-    }
-  }
-  exists b.
-  exact H1.
-Qed.
-
-Lemma nat_mod_val_in_range: forall (n : Z) (a : nat_mod n) (b : Z), 0 <= a < b -> 0 <= val n a < b.
-Proof.
-  intros n a b H.
-  exact H.
+  intros n. 
+  apply (nat_mod_small scalar_max scalar_max_prime n).
 Qed.
 
 Lemma curve_eq_symm: forall (p q : affine_t),
@@ -355,195 +602,12 @@ Proof.
   auto with zarith.
 Qed.
 
-Lemma nat_mod_double_neg: forall (n : Z), forall (x : nat_mod n), (n > 0) -> nat_mod_neg (nat_mod_neg x) = x.
-Proof.
-  intros n x H.
-  rewrite (Z.gt_lt_iff _ _) in H.
-  pose proof (GZnZ.RZnZ n H) as ring.
-  destruct (x =? 0) eqn:eq2. {
-    unfold nat_mod_val in eq2.
-    rewrite -> Z.eqb_eq in eq2.
-    unfold nat_mod_neg.
-    unfold opp.
-    rewrite -> eq2.
-    simpl.
-    symmetry in eq2.
-    destruct x as [x' inZnZ'].
-    pose proof (zirr n (0 mod n) x' (modz n 0) inZnZ' eq2).
-    exact H0.
-  } {
-    unfold nat_mod_val in eq2.
-    rewrite -> Z.eqb_neq in eq2.
-    rewrite -> inZnZ in eq2.
-    unfold nat_mod_neg.
-    unfold opp.
-    simpl.
-    rewrite -> (Z_mod_nz_opp_full (val n x) n eq2).
-    rewrite <- (inZnZ _ x).
-    apply Z.lt_gt in H.
-    pose proof (nat_mod_small n x H).
-    destruct H0 as [_ H1].
-    pose proof (pos_diff x n H1).
-    assert (H2: 0<= n - x < n). {
-      rewrite -> Z.gt_lt_iff in H0.
-      apply Z.lt_le_incl in H0.
-      rewrite <- inZnZ in eq2.
-      pose proof nat_mod_small n x H.
-      lia.
-    }
-    apply Zmod_small in H2.
-    rewrite <- H2 in H0.
-    assert (H3: (n - x) <> 0). { lia. }
-    rewrite <- H2 in H3.
-    assert (H4: Z.opp (n - x) mod n = x). {
-      rewrite (Z_mod_nz_opp_full (n - x) n H3).
-      rewrite H2.
-      lia.
-    }
-    destruct x as [x' inZnZ'].
-    pose proof (zirr _ (Z.opp (n - x') mod n) x' (modz n (Z.opp (n - x'))) (inZnZ') H4) as H5.
-    apply H5.
-  }
-Qed.
-
-Lemma nat_mod_neg_inj: forall (n m : secp256k1_field_element_t), nat_mod_neg n = nat_mod_neg m -> n = m.
-Proof.
-  intros n m H.
-  destruct n as [n' inZnZn'] eqn:eqN.
-  destruct m as [m' inZnZm'] eqn:eqM.
-  destruct (n' =? m') eqn:eq1. {
-    rewrite Z.eqb_eq in eq1.
-    apply zirr.
-    apply eq1.
-  } {
-    destruct (n' =? 0) eqn:eq2. {
-      rewrite Z.eqb_eq in eq2.
-      unfold nat_mod_neg in H.
-      unfold opp in H.
-      simpl in H.
-      rewrite -> eq2 in H.
-      destruct (n' =? m') eqn:eq3. {
-        discriminate eq1.
-      } {
-        simpl in H.
-        assert (H1: m' <> 0). {
-          rewrite -> Z.eqb_neq in eq3.
-          pose proof Z.neq_sym n' m' eq3 as eq4.
-          rewrite -> eq2 in eq4.
-          exact eq4.
-        }
-        rewrite -> inZnZm' in H1.
-        pose proof (Z_mod_nz_opp_full (m') elem_max H1) as H2.
-        assert (H3: 0 mod elem_max <> -m' mod elem_max). {
-          rewrite Zmod_0_l.
-          rewrite H2.
-          rewrite <- inZnZm'.
-          assert (H4: m' < elem_max). {
-            pose proof (field_elem_small m).
-            rewrite eqM in H0.
-            simpl in H0.
-            lia.
-          }
-          lia.
-        }
-        rewrite Zmod_0_l in H3.
-        inversion H.
-        intuition.
-      }
-    } {
-      unfold nat_mod_neg in H.
-      unfold opp in H.
-      simpl in H.
-      rewrite -> Z.eqb_neq in eq2.
-      rewrite inZnZn' in eq2.
-      pose proof (Z_mod_nz_opp_full n' elem_max eq2) as H1.
-      inversion H.
-      rewrite H1 in H2.
-      rewrite <- inZnZn' in H2.
-      destruct (m' =? 0) eqn:eq3. {
-        rewrite Z.eqb_eq in eq3.
-        rewrite eq3 in H2.
-        rewrite Zmod_0_l in H2.
-        pose proof field_elem_small n.
-        rewrite eqN in H0.
-        simpl in H0.
-        lia.
-      } {
-        rewrite Z.eqb_neq in eq3.
-        rewrite inZnZm' in eq3.
-        pose proof (Z_mod_nz_opp_full m' elem_max eq3) as H3.
-        rewrite H3 in H2.
-        rewrite <- inZnZm' in H2.
-        lia.
-      } 
-    }
-  }
-Qed.
-
-Lemma nat_mod_neg_both: forall (n m : secp256k1_field_element_t), n = m <-> nat_mod_neg n = nat_mod_neg m.
-Proof.
-  intros n m.
-  split.
-  - intros H.
-    rewrite H.
-    reflexivity.
-  - intros H.
-    apply nat_mod_neg_inj.
-    exact H.
-Qed.
-
-Lemma nat_mod_neg_symm: forall (n : Z), forall (x y : nat_mod n), (n > 0) -> nat_mod_neg x = y <-> x = nat_mod_neg y.
-Proof.
-  intros n x y H0.
-  split.
-  - intros H.
-    unfold neg_point in H.
-    rewrite <- H.
-    rewrite (nat_mod_double_neg _ x H0).
-    reflexivity.
-  - intros H.
-    rewrite H.
-    rewrite (nat_mod_double_neg _ y H0).
-    reflexivity.
-Qed.
-
-Lemma nat_mod_neg_not_zero: forall (x : secp256k1_field_element_t), (x =? nat_mod_neg x) = (x =? 0).
-Proof.
-  intros x.
-  destruct (x =? nat_mod_neg x) eqn:eq1. {
-    rewrite Z.eqb_eq in eq1.
-    unfold nat_mod_neg in eq1.
-    unfold opp in eq1.
-    inversion eq1.
-    destruct (Ztrichotomy x 0).
-    - pose proof field_elem_small x.
-      lia.
-    - destruct H.
-      + rewrite <- Z.eqb_eq in H0.
-        assert (H1: Z.opp x mod elem_max = 0). {
-          rewrite H.
-          simpl.
-          rewrite Zmod_0_l.
-          reflexivity.
-        }
-        rewrite H1 in H0.
-        rewrite H0.
-        reflexivity.
-      + intuition. (*
-        rewrite Z.lt_neq in H.
-        rewrite H0.
-        rewrite Z.lt_neq in H0.
-        rewrite (Z_mod_nz_opp_full _ _ H) in H0.
-    intuition.
-  }*)
-Admitted.
-
 Lemma double_neg: forall (p : affine_t), p = neg_point (neg_point p).
 Proof.
   intros p.
   unfold neg_point.
   destruct p as (px, py).
-  pose proof nat_mod_double_neg _ py (Z.lt_gt _ _ zero_less_than_elem_max).
+  pose proof nat_mod_double_neg _ elem_max_prime py.
   rewrite pair_equal_spec.
   split.
   - reflexivity.
@@ -566,7 +630,7 @@ Proof.
     split.
     + apply H.
     + destruct H as [_ H1].
-      pose proof nat_mod_neg_inj py qy.
+      pose proof nat_mod_neg_inj _ elem_max_prime py qy.
       rewrite H1 in H.
       intuition.
 Qed.
@@ -576,96 +640,90 @@ Proof.
   intros p q.
   destruct p as (px, py).
   destruct q as (qx, qy).
+  unfold neg_point.
+  rewrite pair_equal_spec.
   split.
   - intros H.
-    unfold neg_point in H.
-    rewrite pair_equal_spec in H.
-    destruct H as [H0 H1].
-    assert (H2: elem_max > 0). { lia. }
-    rewrite <- (nat_mod_double_neg _ qy H2) in H1.
-    apply nat_mod_neg_inj in H1.
-    unfold neg_point.
-    rewrite H0.
-    rewrite H1.
-    reflexivity.
-  - intros H.
-    unfold neg_point in H.
-    rewrite pair_equal_spec in H.
-    destruct H as [H0 H1].
-    unfold neg_point.
     rewrite pair_equal_spec.
-    split.
-    + exact H0.
-    + rewrite <- (nat_mod_double_neg _ py (Z.lt_gt _ _ zero_less_than_elem_max)) in H1.
-      apply nat_mod_neg_inj in H1.
-      exact H1.
+    rewrite <- (nat_mod_double_neg _ elem_max_prime qy) in H.
+    destruct H as [H1 H2].
+    pose proof nat_mod_neg_inj _ elem_max_prime _ _ H2.
+    Search (?a -> ?b -> ?a /\ ?b).
+    apply (conj H1) in H.
+    exact H.
+  - intros H.
+    rewrite pair_equal_spec in H.
+    rewrite <- (nat_mod_double_neg _ elem_max_prime py) in H.
+    destruct H as [H1 H2].
+    pose proof nat_mod_neg_inj _ elem_max_prime _ _ H2.
+    apply (conj H1) in H.
+    exact H.
 Qed.
 
 Lemma neg_symm_bool: forall (p q : affine_t), neg_point p =.? q = p =.? neg_point(q).
 Proof.
   intros p q.
-  destruct p as (px, py).
-  destruct q as (qx, qy).
-  destruct (px =? qx) eqn:eq1. {
-    simpl.
-    unfold nat_mod_val.
+  destruct (neg_point p =.? q) eqn:eq1.
+  - rewrite eqb_leibniz in eq1.
+    rewrite neg_symm in eq1.
+    rewrite <- eqb_leibniz in eq1.
     rewrite eq1.
-    rewrite andb_true_l, andb_true_l.
-    destruct (py =? 0) eqn:eq2. {
-      rewrite Z.eqb_eq in eq2.
-      rewrite eq2.
-      destruct (qy =? 0) eqn:eq3. {
+    reflexivity.
+  - destruct p as (px, py).
+    destruct q as (qx, qy).
+    unfold neg_point.
+    unfold neg_point in eq1.
+    unfold "=.?", Dec_eq_prod.
+    unfold "=.?", Dec_eq_prod in eq1.
+    destruct (px =.? qx) eqn:eq2.
+    + destruct py as (py', inZnZpy) eqn:Heqpy.
+      destruct qy as (qy', inZnZqy) eqn:Heqqy.
+      simpl.
+      simpl in eq1.
+      destruct (py' =? 0) eqn:eq3. {
         rewrite Z.eqb_eq in eq3.
-        rewrite eq3.
-        rewrite Z.eqb_sym.
-        reflexivity.
+        destruct (qy' =? 0) eqn:eq4. {
+          rewrite Z.eqb_eq in eq4.
+          rewrite eq4 in eq1.
+          rewrite eq3 in eq1.
+          simpl in eq1.
+          discriminate eq1.
+        } {
+          rewrite Z.eqb_neq in eq4.
+          rewrite inZnZqy in eq4.
+          rewrite (Z_mod_nz_opp_full _ _ eq4).
+          rewrite <- inZnZqy.
+          pose proof field_elem_small qy.
+          rewrite Heqqy in H.
+          simpl in H.
+          lia.
+        }
       } {
-        rewrite Z.eqb_neq in eq3.
-        rewrite -> inZnZ in eq3.
-        rewrite (Z_mod_nz_opp_full _ _ eq3).
-        rewrite <- inZnZ.
-        assert (H1: elem_max - qy > 0). { pose proof field_elem_small qy. lia. }
-        assert (H2: Z.opp 0 = 0). { intuition. }
-        rewrite H2, Zmod_0_l.
-        rewrite <- inZnZ in eq3.
-        rewrite <- Z.eqb_neq, Z.eqb_sym in eq3.
-        rewrite eq3.
-        lia.
+        destruct (qy' =? 0) eqn:eq4. {
+          rewrite Z.eqb_eq in eq4.
+          rewrite eq4.
+          unfold "mod".
+          simpl.
+          lia.
+        } {
+          rewrite Z.eqb_neq in eq3.
+          rewrite inZnZpy in eq3.
+          rewrite (Z_mod_nz_opp_full _ _ eq3) in eq1.
+          rewrite <- inZnZpy in eq1.
+          rewrite Z.eqb_neq in eq4.
+          rewrite inZnZqy in eq4.
+          rewrite (Z_mod_nz_opp_full _ _ eq4).
+          rewrite <- inZnZqy.
+          lia.
+        }
       }
-    } {
-      destruct (qy =? 0) eqn:eq4. {
-        rewrite Z.eqb_eq in eq4.
-        rewrite eq4.
-        rewrite Z.eqb_neq in eq2.
-        rewrite -> inZnZ in eq2.
-        rewrite (Z_mod_nz_opp_full _ _ eq2).
-        rewrite <- inZnZ.
-        assert (H1: elem_max - py > 0). { pose proof field_elem_small py. lia. }
-        assert (H2: Z.opp 0 = 0). { intuition. }
-        rewrite H2, Zmod_0_l.
-        rewrite <- inZnZ in eq2.
-        rewrite <- Z.eqb_neq in eq2.
-        rewrite eq2.
-        lia.
-      } {
-        rewrite Z.eqb_neq, inZnZ in eq2.
-        rewrite Z.eqb_neq, inZnZ in eq4.
-        rewrite (Z_mod_nz_opp_full _ _ eq2).
-        rewrite (Z_mod_nz_opp_full _ _ eq4).
-        rewrite <- inZnZ.
-        rewrite <- inZnZ.
-        destruct (elem_max - py =? qy) eqn:eq5.
-        - lia.
-        - lia. 
-      }
-    }
-  } {
-    simpl.
-    unfold nat_mod_val.
-    rewrite eq1.
-    intuition.
-  }
+    + rewrite andb_false_l.
+      reflexivity.
 Qed.
+
+Lemma same_x_cases: forall (p q : affine_t), (fst p = fst q) -> p = q \/ p = neg_point q.
+Proof.
+Admitted.
 
 Lemma add_infty_1: forall (p: affine_t), infinity +' p = p.
 Proof.
@@ -684,11 +742,31 @@ Proof.
   unfold double_point.
 Admitted.
 
-Lemma add_different_comm: forall (p q : affine_t), add_different_points p q = add_different_points q p.
+Lemma add_different_comm: forall (p q : affine_t), (fst p <> fst q) -> add_different_points p q = add_different_points q p.
 Proof.
-  intros p q.
+  intros p q H.
   unfold add_different_points.
-Admitted.
+  destruct p as (px, py).
+  destruct q as (qx, qy).
+  unfold fst in H.
+  unfold secp256k1_field_element_t in px, py, qx, qy.
+  apply pair_equal_spec.
+  assert (H1: forall (a b c : nat_mod elem_max), a -% b -% c = a -% c -% b). { intros a b c. ring. }
+  split.
+  - apply not_eq_sym in H.
+    rewrite (flip_division _ elem_max_prime _ _ _ _ H).
+    apply H1.
+  - apply not_eq_sym in H.
+    rewrite (flip_division _ elem_max_prime _ _ _ _ H).
+    rewrite H1.
+    remember (((((py -% qy) *% nat_mod_inv (px -% qx)) *% ((py -% qy) *% nat_mod_inv (px -% qx))) -% qx) -% px) as x3.
+    field_simplify.
+    + reflexivity.
+    + apply not_eq_sym in H.
+      apply (nat_mod_neq_diff _ elem_max_prime _ _ H).
+    + apply not_eq_sym in H.
+      apply (nat_mod_neq_diff _ elem_max_prime _ _ H).
+Qed.
 
 Lemma add_comm: forall (p q : affine_t), add_points p q = add_points q p.
 Proof.
@@ -739,9 +817,24 @@ Proof.
             discriminate H2.
           } {
             apply add_different_comm.
+            simpl.
+            assert (px <> qx). {
+              intuition.
+              pose proof same_x_cases p q.
+              rewrite P1, Q1 in H0.
+              unfold fst in H0.
+              apply H0 in H.
+              destruct H.
+              - symmetry in H.
+                rewrite <- eqb_leibniz in H.
+                rewrite H in H1.
+                discriminate H1.
+              - rewrite <- eqb_leibniz in H.
+                rewrite H in H2.
+                discriminate H2.
+            }
+            exact H.
           }
-          (*Missing case: P != Q /\ P != -Q /\ P != infty /\ Q != infty*)
-          (*I.e. add_different_points*)
         }
       }
     }
@@ -800,7 +893,7 @@ Proof.
               } {
                 rewrite <- neg_symm_bool.
                 rewrite curve_eq_symm, eq7.
-                rewrite add_different_comm.
+                rewrite add_different_comm. (*
                 reflexivity.
               }
             }
@@ -850,7 +943,7 @@ Proof.
                   exact H2.
               }
               rewrite H1. 
-              (*
+              
             }
           }
           apply is_infty_means_infty in eq4.
@@ -904,12 +997,41 @@ Proof.
   intuition.
 Qed.
 
+Lemma nat_to_scalar_add: forall (a b : nat), nat_to_scalar a +% nat_to_scalar b = nat_to_scalar (a + b).
+Proof.
+  intros a b.
+  unfold "+%".
+  unfold add.
+  unfold nat_to_scalar.
+  simpl.
+  assert ((Z.of_nat a mod scalar_max + Z.of_nat b mod scalar_max) mod scalar_max = Z.of_nat (a + b) mod scalar_max). {
+    rewrite <- Zplus_mod.
+    intuition.
+  }
+  apply zirr.
+  exact H. 
+Qed.
+
+Lemma nat_to_scalar_mult: forall (a b : nat), nat_to_scalar a *% nat_to_scalar b = nat_to_scalar (a * b).
+Proof.
+  intros a b.
+  unfold "*%".
+  unfold mul.
+  unfold nat_to_scalar.
+  simpl.
+  assert (((Z.of_nat a mod scalar_max) * (Z.of_nat b mod scalar_max)) mod scalar_max = Z.of_nat (a * b) mod scalar_max). {
+    rewrite <- Zmult_mod.
+    intuition.
+  }
+  apply zirr.
+  exact H. 
+Qed.
+
 Lemma nat_to_scalar_lem: forall (n : nat), exists (n' : secp256k1_scalar_t), n' =? (Z.of_nat n) mod scalar_max = true.
 Proof.
   intros n.
   remember (Z.of_nat n mod scalar_max) as x.
-  assert (H1: 0 < scalar_max). { lia. }
-  pose proof (Z.mod_pos_bound (Z.of_nat n) scalar_max H1) as H2.
+  pose proof (Z.mod_pos_bound (Z.of_nat n) scalar_max zero_less_than_scalar_max) as H2.
   rewrite <- Heqx in H2.
   pose proof (small_to_nat_mod scalar_max x H2) as H3.
   destruct H3 as [b G].
@@ -960,96 +1082,169 @@ Lemma simple_scalar_mult_mod: forall (k : nat) (p: affine_t), simple_scalar_mult
 Proof.
 Admitted.
 
-Lemma scalar_mult_helper: forall (k1 k2 : secp256k1_scalar_t) (p: affine_t), nat_mod_val scalar_max k1 = nat_mod_val scalar_max k2 -> k1 *' p = k2 *' p.
-Proof.
-  intros k1 k2 p H.
-  unfold nat_mod_val in H.
-  unfold "*'".
-  unfold nat_mod_get_bit.
-  unfold nat_mod_bit.
-  rewrite -> H.
-  reflexivity.
-Qed.
-
 Lemma scalar_mult_distributivity: forall (k1 k2 : secp256k1_scalar_t) (p: affine_t), k1 *' p +' k2 *' p = (k1 +% k2) *' p.
 Proof.
   intros k1 k2 p.
-  assert (H0: nat_mod_val _ (nat_to_scalar (Z.to_nat k1)) = nat_mod_val _ k1). {
-    simpl.
-    unfold nat_to_scalar.
-    rewrite -> Z2Nat.id.
-    - rewrite <- (inZnZ scalar_max k1).
-      unfold nat_mod_val.
-      reflexivity.
-    - apply nat_mod_small.
-      lia.
-  }
-  assert (H1: nat_mod_val _ (nat_to_scalar (Z.to_nat k2)) = nat_mod_val _ k2). {
-    simpl.
-    unfold nat_to_scalar.
-    rewrite -> Z2Nat.id.
-    - rewrite <- (inZnZ scalar_max k2).
-      unfold nat_mod_val.
-      reflexivity.
-    - apply nat_mod_small.
-      lia.
-  }
-  rewrite <- (scalar_mult_helper (nat_to_scalar (Z.to_nat k1)) k1 p H0).
-  rewrite <- (scalar_mult_helper (nat_to_scalar (Z.to_nat k2)) k2 p H1).
+  rewrite <- (nat_to_scalar_id k1).
+  rewrite <- (nat_to_scalar_id k2).
   rewrite scalar_mult_def.
   rewrite scalar_mult_def.
-  assert (H2: nat_mod_val scalar_max (nat_to_scalar (Z.to_nat (k1 +%k2))) = nat_mod_val scalar_max (k1 +% k2)). {
-    simpl.
-    rewrite -> Z2Nat.id.
-    - rewrite -> Zmod_mod.
-      reflexivity.
-    - apply Z.mod_pos_bound.
-      lia.
-  }
-  rewrite <- (scalar_mult_helper (nat_to_scalar (Z.to_nat (k1 +% k2))) (k1 +% k2) p H2).
+  rewrite nat_to_scalar_add.
   rewrite scalar_mult_def.
   rewrite simple_scalar_mult_distributivity.
-  rewrite simple_scalar_mult_mod.
-  destruct k1 as [k1' k1inz] eqn:eq1.
-  destruct k2 as [k2' k2inz] eqn:eq2.
-  unfold Z.to_nat.
-  unfold val.
-  unfold "+%".
-  unfold add.
-  unfold val.
-  assert (H3: scalar_max > 0). { lia. }
-  assert (H4: 0 <= k1'). {
-    pose proof nat_mod_small scalar_max k1 H3 as [H _].
-    unfold "<=".
-    unfold "?=".
-    unfold "<=" in H.
-    unfold "?=" in H.
-    unfold val in H.
-    rewrite eq1 in H.
-    exact H.
-  }
-  assert (H5: 0 <= k2'). {
-    pose proof nat_mod_small scalar_max k2 H3 as [H _].
-    unfold "<=".
-    unfold "?=".
-    unfold "<=" in H.
-    unfold "?=" in H.
-    unfold val in H.
-    rewrite eq2 in H.
-    exact H.
-  }
-  assert (H6: 0 <= k1' + k2'). { lia. }
-  assert (H7: 0 <= scalar_max). { lia. }
-  fold (Z.to_nat k1').
-  fold (Z.to_nat k2').
-  fold (Z.to_nat ((k1'+k2') mod scalar_max)).
-  rewrite -> (Z2Nat.inj_mod (k1' + k2') scalar_max H6 H7).
-  rewrite -> (Z2Nat.inj_add k1' k2' H4 H5).
-  unfold BinInt.Z.to_nat.
   reflexivity.
 Qed.
 
-Lemma scalar_mult_distributivity2: forall (a b : secp256k1_scalar_t) (p : affine_t), a *' b *' p = (a *% b) *' p.
+Lemma scalar_mult_fold_once: forall (a b : nat) (p : affine_t), (simple_scalar_mult (a * b) p) +' (simple_scalar_mult b p) = simple_scalar_mult (S(a) * b) p.
 Proof.
-  intros a b.
+  intros a b p.
+  simpl.
+  rewrite <- simple_scalar_mult_distributivity.
+  rewrite add_comm.
+  reflexivity.
+Qed.
+
+Lemma scalar_mult_assoc2: forall (a b : secp256k1_scalar_t) (p : affine_t), a *' b *' p = (a *% b) *' p.
+Proof.
+  intros a b p.
+  rewrite <- (nat_to_scalar_id a).
+  rewrite <- (nat_to_scalar_id b).
+  rewrite scalar_mult_def.
+  rewrite scalar_mult_def.
+  rewrite nat_to_scalar_mult.
+  rewrite scalar_mult_def.
+  induction (Z.to_nat a).
+  - unfold simple_scalar_mult.
+    simpl.
+    reflexivity.
+  - unfold simple_scalar_mult.
+    fold simple_scalar_mult.
+    rewrite IHn.
+    fold (simple_scalar_mult (S n * Z.to_nat b) p).
+    rewrite scalar_mult_fold_once.
+    reflexivity.
+Qed.
+
+Structure on_curve_t: Set:=
+ mkoncurve {point: affine_t;
+        on_curve: is_point_on_curve point = true }.
+
+Lemma infty_on_curve: is_point_on_curve infinity = true.
+Proof.
+  intuition.
+Qed.
+
+Lemma generator_on_curve: is_point_on_curve generator = true.
+Proof.
+  unfold is_point_on_curve.
+  assert (is_infinity generator = false). {
+    assert (fst generator <> fst infinity). {
+      unfold fst, infinity, generator.
+      auto. (*
+    }
+    unfold generator, is_infinity, infinity.
+  }
+  destruct generator as (x, y) eqn:eq1.*)
+Admitted.
+
+Lemma on_curve_x_from_y: forall (p : on_curve_t),
+  is_infinity (point p) = true \/ (fst (point p)) =  nat_mod_root elem_max ((nat_mod_exp (snd (point p)) (@repr WORDSIZE128 2)) -%  nat_mod_from_literal elem_max (@repr WORDSIZE128 7)) (@repr WORDSIZE128 3).
+Proof.
+  intros p.
+  destruct (is_infinity (point p)) eqn:eq1.
+  - intuition.
+  - pose proof on_curve p.
+    unfold is_point_on_curve in H.
+    rewrite eq1 in H.
+    simpl in H.
+    destruct (point p) as (px, py).
+    simpl.
+    assert (px = nat_mod_root elem_max (nat_mod_exp_def py 2 -% nat_mod_from_literal elem_max (@repr WORDSIZE128 7)) (@repr WORDSIZE128 3)).
+    + unfold secp256k1_field_element_t in px, py.
+      unfold nat_mod_root.
+      field_simplify.
+Admitted.
+
+Lemma add_different_closure: forall (p q : on_curve_t), is_infinity (point p) = false -> is_infinity (point q) = false -> (fst (point p) <> fst (point q)) -> exists r, point r = add_different_points (point p) (point q).
+Proof.
+  intros p q H1 H2 H3.
+  remember (add_different_points (point p) (point q)) as r'.
+  destruct (is_point_on_curve r') eqn:eq1.
+  - remember (mkoncurve r' eq1) as r.
+    exists r.
+    rewrite Heqr.
+    simpl.
+    reflexivity.
+  - remember (is_point_on_curve r') as res.
+    unfold is_point_on_curve in Heqres.
+    destruct r' as (rx, ry) eqn:eqr.
+    destruct (is_infinity (rx, ry)) eqn:eq2.
+    + simpl in Heqres.
+      rewrite Heqres in eq1.
+      discriminate.
+    + simpl in Heqres.
+Admitted.
+
+Lemma double_point_closure: forall (p : on_curve_t), exists (r : on_curve_t), point r = double_point (point p).
+Proof.
+Admitted.
+
+Lemma add_points_closure: forall (p q : on_curve_t), exists (r : on_curve_t), point r = (point p) +' (point q).
+Proof.
+  intros p q.
+  unfold "+'".
+  destruct (is_infinity (point p)) eqn:eq1. {
+    exists q.
+    intuition.
+  } {
+    destruct (is_infinity (point q)) eqn:eq2. {
+      exists p.
+      intuition.
+    } {
+      destruct (point p =.? point q) eqn:eq3. {
+        exact (double_point_closure p).
+      } {
+        destruct (point p =.? neg_point (point q)) eqn:eq4. {
+          remember (mkoncurve infinity (infty_on_curve)) as i.
+          exists i.
+          rewrite Heqi.
+          intuition.
+        } {
+          assert (eq5: fst (point p) <> fst (point q)). {
+            pose proof same_x_cases (point p) (point q).
+            intuition.
+            - rewrite <- eqb_leibniz in H.
+              rewrite H in eq3.
+              discriminate.
+            - rewrite <- eqb_leibniz in H.
+              rewrite H in eq4.
+              discriminate.
+          }
+          exact (add_different_closure p q eq1 eq2 eq5).
+        }
+      }
+    }
+  }
+Qed.
+
+Lemma scalar_mult_closure: forall (p : on_curve_t) (k : secp256k1_scalar_t), exists (q : on_curve_t), is_point_on_curve point q = k *' (point p).
+Proof.
+  intros p k.
+  rewrite <- (nat_to_scalar_id k).
+  rewrite scalar_mult_def.
+  induction (Z.to_nat k).
+  - unfold simple_scalar_mult.
+    remember (mkoncurve infinity infty_on_curve) as i.
+    exists i.
+    rewrite Heqi.
+    intuition.
+  - unfold simple_scalar_mult.
+    fold simple_scalar_mult.
+    destruct IHn.
+    rewrite <- H.
+    exact (add_points_closure x p).
+Qed.
+
+Lemma scalar_mult_generator_not_zero: forall (a : secp256k1_scalar_t), a <> nat_mod_zero -> is_infinity (a *' generator) = false.
+Proof.
 Admitted.

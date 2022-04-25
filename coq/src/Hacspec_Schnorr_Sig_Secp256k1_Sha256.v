@@ -5,11 +5,14 @@ Import List.ListNotations.
 Open Scope Z_scope.
 Open Scope bool_scope.
 Open Scope hacspec_scope.
-Require Import Hacspec_Lib.
+Require Import Hacspec_Lib Field.
 
 Require Import Hacspec_Secp256k1.
 
 Require Import Hacspec_Sha256.
+
+Add Field field_elem_FZpZ : field_elem_FZpZ.
+Add Field scalar_FZpZ : scalar_FZpZ.
 
 Definition sign
   (a_0 : secp256k1_scalar_t)
@@ -79,10 +82,33 @@ Proof.
                 (seq_concat (nat_mod_to_byte_seq_le Ay) m)))))) as H.
   remember (Vx, Vy) as V.
   remember (Ax, Ay) as A.
-  Search (?a && ?b = true).
   rewrite Bool.andb_true_iff.
   rewrite Bool.andb_true_iff.
   split.
   - split.
     + rewrite HeqA.
-      rewrite (scalar_mult_distributivity (v -% (a *% H)) ()).
+      rewrite (scalar_mult_assoc2 H a generator).
+      rewrite scalar_mult_distributivity.
+      assert (v = ((v -% (a *% H)) +% (H *% a))). {
+        unfold secp256k1_scalar_t in v, a, H.
+        field_simplify.
+        reflexivity.
+      }
+      rewrite <- H2.
+      rewrite HeqV, eqb_leibniz.
+      reflexivity.
+    + remember (mkoncurve generator generator_on_curve) as g.
+      pose proof scalar_mult_closure g a.
+      destruct H2.
+      rewrite Heqg in H2.
+      simpl in H2.
+      rewrite <- HeqA in H2.
+      pose proof on_curve x.
+      rewrite H2 in H3.
+      exact H3.
+  - pose proof scalar_mult_generator_not_zero a H0.
+    rewrite <- HeqA in H2.
+    unfold negb.
+    rewrite H2.
+    reflexivity.
+Qed.

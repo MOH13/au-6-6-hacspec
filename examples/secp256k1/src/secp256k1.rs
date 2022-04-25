@@ -33,7 +33,7 @@ pub fn is_infinity(p: Affine) -> bool {
 /// Checks if the given point is a valid point on the curve
 pub fn is_point_on_curve(p: Affine) -> bool {
     let (x,y) = p;
-    is_infinity(p) || y * y == x * x * x + Secp256k1FieldElement::from_literal(7u128)
+    is_infinity(p) || y.exp(2u32) == x.exp(3u32) + Secp256k1FieldElement::from_literal(7u128)
 }
 /// Returns the base point, G, for the Secp256k1 curve in affine coordinates
 #[allow(non_snake_case)]
