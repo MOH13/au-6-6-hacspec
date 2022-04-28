@@ -438,7 +438,7 @@ Definition seq_slice_range
   seq_slice input (from_uint_size (fst start_fin)) (from_uint_size (snd start_fin)).
 
 (* updating a subsequence in a sequence *)
-Definition seq_update
+Definition fate
   {a: Type}
  `{Default a}
   (s: seq a)

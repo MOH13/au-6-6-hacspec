@@ -115,9 +115,32 @@ pub fn scalar_multiplication(k: Secp256k1Scalar, p: Affine) -> Affine {
     let mut q = INFINITY();
     for i in 0..SCALAR_BITS {
         q = double_point(q);
-        if k.get_bit(SCALAR_BITS - 1 - i).equal(Secp256k1Scalar::ONE()) {
+        if k.bit(SCALAR_BITS - 1 - i) {
             q = add_points(p, q);
         }
     }
     q
+}
+
+/// Calculates the sum a_1 * P_1 + ... + a_i * P_i + ... + A_m * P_m
+pub fn batch_scalar_multiplication(elems: Seq<(Secp256k1Scalar, Affine)>) -> Affine {
+    #[allow(unused_assignments)]
+    let mut res = INFINITY();
+    if elems.len() == 0 {
+        res = INFINITY()
+    }
+    else {
+        let mut new_elems = elems;
+        for i in 0..new_elems.len()-2 {
+            let (ai, pi) = new_elems[i];
+            let (aiplus1, piplus1) = new_elems[i+1];
+            new_elems[i] = (ai - aiplus1, pi);
+            new_elems[i+1] = (aiplus1, add_points(pi, piplus1));
+        }
+        for i in 0..new_elems.len()-1 {
+            let (ai, pi) = new_elems[i];
+            res = add_points(res, scalar_multiplication(ai, pi))
+        }
+    }
+    res
 }
