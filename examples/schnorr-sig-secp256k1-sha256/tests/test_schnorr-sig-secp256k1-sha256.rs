@@ -76,3 +76,19 @@ fn test_wrong_s() {
       .tests(5)
       .quickcheck(helper as fn(Secp256k1ScalarGenerator, Secp256k1ScalarGenerator, Vec<u8>) -> TestResult);
 }
+
+#[test]
+#[allow(non_snake_case)]
+fn test_multi_sig() {
+  fn helper(av: Vec<(Secp256k1ScalarGenerator, Secp256k1ScalarGenerator)>, m: Vec<u8>) -> TestResult {
+    let av: Vec<(Secp256k1Scalar, Secp256k1Scalar)> = av.into();
+    
+    let m = ByteSeq::from_vec(m.iter().map(|i| (*i).into()).collect());
+
+    TestResult::from_bool(false)
+  }
+  QuickCheck::new()
+      .tests(5)
+      .quickcheck(helper as fn(Vec<(Secp256k1ScalarGenerator, Secp256k1ScalarGenerator)>, Vec<u8>) -> TestResult)
+
+}
