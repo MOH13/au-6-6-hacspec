@@ -15,12 +15,11 @@ pub fn sign(a: Secp256k1Scalar, A: Affine, v: Secp256k1Scalar, m: &ByteSeq) -> (
 }
 
 #[allow(non_snake_case)]
-pub fn multi_sig(v: Secp256k1Scalar, m: &ByteSeq, L: Seq<Affine>) {
-    let L_as_bytes: Seq<ByteSeq> = Seq::<ByteSeq>::new(L.len());
-    let a: Seq<Sha256Digest> = Seq::<Sha256Digest>::new(L.len());
+pub fn multi_sig_sign(v: Secp256k1Scalar, m: &ByteSeq, L: Seq<Affine>, r: Secp256k1Scalar, t_seq: Seq<Sha256Digest>, R_seq: Seq<Affine>, s_seq: Seq<Secp256k1Scalar>) -> (Affine, Secp256k1Scalar) {
+    let L_as_bytes: Seq<ByteSeq> = Seq::<ByteSeq>::new(0);
+    let a: Seq<Sha256Digest> = Seq::<Sha256Digest>::new(0);
     let g = GENERATOR();
     let (Vx, Vy) = scalar_multiplication(v, g);
-    let signer_pk_as_bytes = Vx.to_byte_seq_le().concat(&Vy.to_byte_seq_le());
     
 
     // Transform all public keys into byte sequences
@@ -29,18 +28,111 @@ pub fn multi_sig(v: Secp256k1Scalar, m: &ByteSeq, L: Seq<Affine>) {
         L_as_bytes.push(&x.to_byte_seq_le().concat(&y.to_byte_seq_le()));
     }
 
-    // Concatenate all byte sequences into one sequence
-    let mut L_byte_concat: Seq<U8> = Seq::<U8>::new(L_as_bytes.len());
+    // Concatenate all byte sequences of public keys into one sequence
+    let mut L_byte_concat: Seq<U8> = Seq::<U8>::new(0);
     for i in 0..L_as_bytes.len(){
         L_byte_concat = L_byte_concat.concat(&L_as_bytes[i]);
     }
 
-    // compute a_i's by hashing L with each X_i
+    // compute a_i's by hashing L (as a byte sequence) with each X_i
     for i in 0..L.len() {
         a.push(&hash(&L_byte_concat.concat(&L_as_bytes[i])));
     }
+
+    let V_as_bytes = Vx.to_byte_seq_le().concat(&Vy.to_byte_seq_le());
     // this is also stored in a above, but how to know which of the entries belong to our sk?
-    let signers_a = hash(&L_byte_concat.concat(&signer_pk_as_bytes));
+    let a_1 = hash(&L_byte_concat.concat(&V_as_bytes));
+
+    let mut agg_pk = INFINITY();
+    for i in 0..L.len() {
+        let pk_i_a_i = scalar_multiplication(Secp256k1Scalar::from_byte_seq_le(a[i]), L[i]); //X_i (public key) * a_i
+        agg_pk = add_points(agg_pk, pk_i_a_i); // aggregated key is addition of all (X_i * a_i)
+    }
+
+    /* check that we got the correct R's and t's from other signers (move out to another function)
+    for i in 0..R.len() {
+        let (Rx, Ry) = R_seq[i];
+        if !(t[i].equal(hash(&Rx.to_byte_seq_le().concat(&Ry.to_byte_seq_le())))) {
+            
+        }
+    }
+    */
+    let mut R = INFINITY();
+    for i in 0..R_seq.len() { // compute the random point to be used in signature, as an "aggreate" of all random points
+        R = add_points(R, R_seq[i]);
+    }
+    let (Rx, Ry) = R;
+    let R_as_bytes = Rx.to_byte_seq_le().concat(&Ry.to_byte_seq_le());
+
+    let (Px, Py) = agg_pk;
+    let agg_pk_as_bytes = Px.to_byte_seq_le().concat(&Py.to_byte_seq_le());
+
+    let pk_R_m_as_bytes = agg_pk_as_bytes.concat(&R_as_bytes.concat(m));
+
+    /* assuming s_seq contains all s_i, there is no need for this (but should be computed earlier then)
+    let c = hash(&agg_pk_agg_R_m_as_bytes);
+    let c_as_scalar = Secp256k1Scalar::from_byte_seq_le(c);
+    let a_1_as_scalar = Secp256k1Scalar::from_byte_seq_le(a_1);
+    let s_1 = r + c_as_scalar * a_1_as_scalar * v;
+    */
+    let mut s = Secp256k1Scalar::ZERO();
+    for i in 0..s_seq.len() {
+        s = s + s_seq[i];
+    }
+
+    (R, s)
+}
+
+#[allow(non_snake_case)]
+pub fn multi_sig_verify(L: Seq<Affine>, m: &ByteSeq, signature: (Affine, Secp256k1Scalar)) -> bool {
+    let a: Seq<Sha256Digest> = Seq::<Sha256Digest>::new(0);
+    let L_as_bytes: Seq<ByteSeq> = Seq::<ByteSeq>::new(0);
+    let (R, s) = signature;
+    let g = GENERATOR();
+
+    // Transform all public keys into byte sequences
+    for i in 0..L.len() {
+        let (x, y) = L[i];
+        L_as_bytes.push(&x.to_byte_seq_le().concat(&y.to_byte_seq_le()));
+    }
+
+    // Concatenate all byte sequences of public keys into one sequence
+    let mut L_byte_concat: Seq<U8> = Seq::<U8>::new(0);
+    for i in 0..L_as_bytes.len(){
+        L_byte_concat = L_byte_concat.concat(&L_as_bytes[i]);
+    }
+
+    for i in 0..L.len() {
+        a.push(&hash(&L_byte_concat.concat(&L_as_bytes[i])));
+    }
+
+    let mut agg_pk = INFINITY();
+    for i in 0..L.len() {
+        let pk_i_a_i = scalar_multiplication(Secp256k1Scalar::from_byte_seq_le(a[i]), L[i]); //pk_i * a_i
+        agg_pk = add_points(agg_pk, pk_i_a_i); // aggregated key is addition of all (pk_i * a_i)
+    }
+
+    let (Rx, Ry) = R;
+    let R_as_bytes = Rx.to_byte_seq_le().concat(&Ry.to_byte_seq_le());
+
+    let (Px, Py) = agg_pk;
+    let agg_pk_as_bytes = Px.to_byte_seq_le().concat(&Py.to_byte_seq_le());
+
+    let agg_pk_R_m_as_bytes = agg_pk_as_bytes.concat(&R_as_bytes.concat(m));
+
+    let c = hash(&agg_pk_R_m_as_bytes);
+
+    let mut agg_pk_a_c = INFINITY();
+    for i in 0..L.len() {
+        let pk_i_a_i_c = scalar_multiplication(Secp256k1Scalar::from_byte_seq_le(c), scalar_multiplication(Secp256k1Scalar::from_byte_seq_le(a[i]), L[i])); //pk_i * a_i * c
+        agg_pk_a_c = add_points(agg_pk_a_c, pk_i_a_i_c);
+    }
+
+    let agg_pk_c = scalar_multiplication(Secp256k1Scalar::from_byte_seq_le(c), agg_pk);
+
+
+    // signature is correct if g x s = R + sum(pk_i x a_i x c) = R + agg_pk x c
+    scalar_multiplication(s, g).eq(&add_points(R, agg_pk_a_c)) && add_points(R, agg_pk_a_c).eq(&add_points(R, agg_pk_c))
 }
 
 #[allow(non_snake_case)]
