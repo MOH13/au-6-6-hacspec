@@ -1,6 +1,6 @@
 (** This file was automatically generated using Hacspec **)
 Require Import Hacspec_Lib MachineIntegers.
-From Coq Require Import ZArith Nat.
+From Coq Require Import ZArith Nat List.
 Import List.ListNotations.
 Open Scope Z_scope.
 Open Scope bool_scope.
@@ -220,44 +220,55 @@ Definition scalar_multiplication
       (q_32))
     q_32 in 
   q_32.
-
-  Definition batch_scalar_multiplication
+  
+Definition batch_scalar_optimization
   (elems_34 : seq (secp256k1_scalar_t × affine_t))
-  : affine_t :=
-  let res_35 : (secp256k1_field_element_t × secp256k1_field_element_t) :=
-    infinity  in 
-  let '(res_35) :=
-    if (seq_len (elems_34)) =.? (usize 0):bool then (let res_35 :=
-        infinity  in 
-      (res_35)) else (let new_elems_36 : seq (secp256k1_scalar_t × affine_t) :=
-        elems_34 in 
-      let new_elems_36 :=
-        foldi (usize 0) ((seq_len (new_elems_36)) - (
-              usize 2)) (fun i_37 new_elems_36 =>
-          let '(ai_38, pi_39) :=
-            seq_index (new_elems_36) (i_37) in 
-          let '(aiplus1_40, piplus1_41) :=
-            seq_index (new_elems_36) ((i_37) + (usize 1)) in 
-          let new_elems_36 :=
-            seq_upd new_elems_36 (i_37) (((ai_38) -% (aiplus1_40), pi_39)) in 
-          let new_elems_36 :=
-            seq_upd new_elems_36 ((i_37) + (usize 1)) ((
-                aiplus1_40,
-                add_points (pi_39) (piplus1_41)
+  : seq (secp256k1_scalar_t × affine_t) :=
+  let new_elems_35 : seq (secp256k1_scalar_t × affine_t) :=
+    elems_34 in 
+  let '(new_elems_35) :=
+    if (seq_len (new_elems_35)) =.? (usize 0):bool then (let new_elems_35 :=
+        new_elems_35 in 
+      (new_elems_35)) else (let new_elems_35 :=
+        foldi (usize 0) ((seq_len (new_elems_35)) - (
+              usize 1)) (fun i_36 new_elems_35 =>
+          let '(ai_37, pi_38) :=
+            seq_index (new_elems_35) (i_36) in 
+          let '(aiplus1_39, piplus1_40) :=
+            seq_index (new_elems_35) ((i_36) + (usize 1)) in 
+          let new_elems_35 :=
+            seq_upd new_elems_35 (i_36) (((ai_37) -% (aiplus1_39), pi_38)) in 
+          let new_elems_35 :=
+            seq_upd new_elems_35 ((i_36) + (usize 1)) ((
+                aiplus1_39,
+                add_points (pi_38) (piplus1_40)
               )) in 
-          (new_elems_36))
-        new_elems_36 in 
-      let res_35 :=
-        foldi (usize 0) ((seq_len (new_elems_36)) - (
-              usize 1)) (fun i_42 res_35 =>
-          let '(ai_43, pi_44) :=
-            seq_index (new_elems_36) (i_42) in 
-          let res_35 :=
-            add_points (res_35) (scalar_multiplication (ai_43) (pi_44)) in 
-          (res_35))
-        res_35 in 
-      (res_35)) in 
-  res_35.
+          (new_elems_35))
+        new_elems_35 in 
+      (new_elems_35)) in 
+  new_elems_35.
+
+Definition product_sum
+  (elems_41 : seq (secp256k1_scalar_t × affine_t))
+  : affine_t :=
+  let res_42 : (secp256k1_field_element_t × secp256k1_field_element_t) :=
+    infinity  in 
+  let res_42 :=
+    foldi (usize 0) (seq_len (elems_41)) (fun i_43 res_42 =>
+      let '(ai_44, pi_45) :=
+        seq_index (elems_41) (i_43) in 
+      let res_42 :=
+        add_points (res_42) (scalar_multiplication (ai_44) (pi_45)) in 
+      (res_42))
+    res_42 in 
+  res_42.
+
+Definition batch_scalar_multiplication
+  (elems_46 : seq (secp256k1_scalar_t × affine_t))
+  : affine_t :=
+  let optimized_47 : seq (secp256k1_scalar_t × affine_t) :=
+    batch_scalar_optimization (elems_46) in 
+  product_sum (optimized_47).
 
 Lemma zero_less_than_elem_max: 0 < elem_max.
 Proof.
@@ -575,6 +586,17 @@ Proof.
   exact inZnZ.
 Qed.
 
+Lemma znz_duplicate: forall (a : nat_mod max) (b : Z) (H : val _ a = b), exists H2, a = mkznz _ b H2.
+Proof.
+  intros a b H.
+  destruct a as (a', inZnZa).
+  simpl in H.
+  assert (inZnZb := inZnZa).
+  rewrite H in inZnZb.
+  exists inZnZb.
+  apply (zirr _ _ _ inZnZa inZnZb H).
+Qed.
+
 End nat_mod.
 
 Section foldi.
@@ -592,6 +614,169 @@ Proof.
     rewrite eq1 in Heqres.
     discriminate Heqres.
   - reflexivity.
+Qed.
+
+Lemma foldi_equiv: forall (A : Type) (a b : uint_size) (f g : uint_size -> A -> A) (acc : A),
+  (forall (i0 : uint_size) acc0, (unsigned a <= unsigned i0 < unsigned b) -> f i0 acc0 = g i0 acc0) ->
+  foldi a b f acc = foldi a b g acc.
+Proof.
+  intros.
+  revert H.
+  unfold foldi.
+  destruct a as (a', a_small).
+  destruct b as (b', b_small).
+  simpl.
+  destruct (b' - a') eqn:eq1.
+  - reflexivity.
+  - unfold foldi_.
+    remember (mkint a' a_small) as a.
+    assert (Z.of_nat (Pos.to_nat p) + unsigned a = b'). {
+      rewrite Heqa.
+      simpl.
+      lia.
+    }
+    assert (a' <= unsigned a). {
+      rewrite Heqa.
+      simpl.
+      lia.
+    }
+    fold (foldi_ (Pos.to_nat p) a f acc).
+    fold (foldi_ (Pos.to_nat p) a g acc).
+    clear Heqa.
+    revert H. revert H0. revert g. revert f. revert acc. revert a.
+    induction (Pos.to_nat p).
+    + reflexivity.
+    + intros.
+      assert (a' <= unsigned a < b'). {
+        destruct a.
+        simpl.
+        unfold unsigned in H.
+        unfold MachineIntegers.intval in H.
+        unfold unsigned in H0.
+        unfold MachineIntegers.intval in H0.
+        lia.
+      }
+      unfold foldi_.
+      fold (foldi_ n (a .+ MachineIntegers.one) f (f a acc)).
+      fold (foldi_ n (a .+ MachineIntegers.one) g (g a acc)).
+      rewrite (H1 _ acc H2).
+      remember (fun i => f (i .+ MachineIntegers.one)) as f'.
+      remember (fun i => g (i .+ MachineIntegers.one)) as g'.
+      assert (forall i0 acc0, a' <= unsigned i0 < b' -1 -> f' i0 acc0 = g' i0 acc0). {
+        intros.
+        assert (a' <= unsigned (i0 .+ MachineIntegers.one) < b'). {
+          unfold ".+".
+          assert (@unsigned WORDSIZE32 MachineIntegers.one = 1). { easy. }
+          rewrite H4.
+          simpl.
+          assert (0 <= unsigned i0 + 1 < @modulus WORDSIZE32). { lia. }
+          rewrite Z_mod_modulus_eq.
+          rewrite (Zmod_small _ _ H5).
+          intuition.
+        }
+        pose proof (H1 (i0 .+ MachineIntegers.one) acc0 H4).
+        rewrite Heqf'.
+        rewrite Heqg'.
+        exact H5.
+      }
+      assert (unsigned (a .+ MachineIntegers.one) = unsigned a + 1). {
+        unfold ".+".
+        assert (@unsigned WORDSIZE32 MachineIntegers.one = 1). { easy. }
+        rewrite H4.
+        assert (@max_unsigned WORDSIZE32 = @modulus WORDSIZE32 - 1). { easy. }
+        assert (0 <= unsigned a + 1 <= @max_unsigned WORDSIZE32). { lia. }
+        rewrite (unsigned_repr _ H6).
+        reflexivity.
+      }
+      assert (a' <= unsigned (a .+ MachineIntegers.one)). {
+        lia.
+      }
+      assert (Z.of_nat n + unsigned (a .+ MachineIntegers.one) = b'). { lia. }
+      exact (IHn (a .+ MachineIntegers.one) (g a acc) f g H5 H6 H1).
+  - reflexivity.
+Qed.
+
+Lemma foldi_offset: forall (A : Type) (n : nat) i j (f g : uint_size -> A -> A) acc,
+  0 <= Z.of_nat n + unsigned i <= @max_unsigned WORDSIZE32 ->
+  0 <= Z.of_nat n + unsigned j <= @max_unsigned WORDSIZE32 ->
+  (forall i0 acc0, 0 <= i0 <= n -> f ((repr i0) .+ i) acc0 = g ((repr i0) .+ j) acc0) ->
+  foldi_ n i f acc = foldi_ n j g acc.
+Proof.
+  intros.
+  (*
+  remember (repr 0) as a.
+  assert (n + uint_size_to_nat a = n)%nat. {
+    rewrite Heqa.
+    simpl.
+    Set Printing All.
+    unfold uint_size_to_nat.
+    unfold from_uint_size.
+    unfold nat_uint_sizable.
+    assert (0 <= 0 <= @max_unsigned WORDSIZE32). { easy. }
+    rewrite (unsigned_repr _ H0).
+    intuition.
+  }
+  revert H0.*) revert H1. revert H0. revert H.
+  (*clear Heqa.*)
+  revert acc. revert g. revert f. (*revert a.*) revert j. revert i.
+  induction n.
+  - reflexivity.
+  - intros.
+    unfold foldi_.
+    fold (foldi_ n (i .+ MachineIntegers.one) f (f i acc)).
+    fold (foldi_ n (j .+ MachineIntegers.one) g (g j acc)).
+    pose proof unsigned_range_2 i.
+    pose proof unsigned_range_2 j.
+    assert (@unsigned WORDSIZE32 MachineIntegers.one = 1). { easy. }
+    assert (0 <= Z.of_nat n + unsigned (i .+ MachineIntegers.one) <= @max_unsigned WORDSIZE32). {
+      unfold ".+".
+      rewrite H4.
+      assert (unsigned i < @max_unsigned WORDSIZE32). { lia. }
+      assert (0 <= (unsigned i) + 1 <= @max_unsigned WORDSIZE32). { lia. }
+      rewrite (unsigned_repr _ H6).
+      lia.
+    }
+    assert (0 <= Z.of_nat n + unsigned (j .+ MachineIntegers.one) <= @max_unsigned WORDSIZE32). {
+      unfold ".+".
+      rewrite H4.
+      assert (unsigned j < @max_unsigned WORDSIZE32). { lia. }
+      assert (0 <= (unsigned j) + 1 <= @max_unsigned WORDSIZE32). { lia. }
+      rewrite (unsigned_repr _ H7).
+      lia.
+    }
+    assert (forall i0 acc0, 0 <= i0 <= n ->
+        f (repr i0 .+ (i .+ MachineIntegers.one)) acc0 = g (repr i0 .+ (j .+ MachineIntegers.one)) acc0). {
+      intros.
+      remember (i0 + 1) as i0'.
+      assert (0 <= i0' <= S n). { lia. }
+      pose proof (H1 i0' acc0 H8).
+      rewrite Heqi0' in H9.
+      unfold ".+" in H9.
+      assert (0 <= i0 + 1 <= @max_unsigned WORDSIZE32). { lia. }
+      rewrite (unsigned_repr _ H10) in H9.
+      unfold ".+".
+      assert (0 <= i0 <= @max_unsigned WORDSIZE32). { lia. }
+      rewrite (unsigned_repr _ H11).
+      rewrite H4.
+      pose proof @repr_unsigned WORDSIZE32.
+      assert (0 <= unsigned i + 1 <= @max_unsigned WORDSIZE32). { lia. }
+      rewrite (unsigned_repr _ H13).
+      assert (0 <= unsigned j + 1 <= @max_unsigned WORDSIZE32). { lia. }
+      rewrite (unsigned_repr _ H14).
+      assert (i0 + 1 + unsigned i = i0 + (unsigned i + 1)). { lia. }
+      assert (i0 + 1 + unsigned j = i0 + (unsigned j + 1)). { lia. }
+      rewrite H15, H16 in H9.
+      exact H9.
+    }
+    assert (0 <= 0 <= S n). { lia. }
+    pose proof (H1 0 acc H8).
+    unfold ".+" in H9.
+    assert (0 <= 0 <= @max_unsigned WORDSIZE32). { easy. }
+    rewrite (unsigned_repr _ H10) in H9.
+    simpl in H9.
+    rewrite repr_unsigned, repr_unsigned in H9.
+    rewrite H9.
+    exact (IHn (i .+ MachineIntegers.one) (j .+ MachineIntegers.one) f g (g j acc) H5 H6 H7).
 Qed.
 
 End foldi.
@@ -819,17 +1004,14 @@ Proof.
   intuition.
 Qed.
 
+(* How do we get the actual values? *)
 Lemma generator_on_curve: is_point_on_curve generator = true.
 Proof.
   unfold is_point_on_curve.
-  assert (is_infinity generator = false). {
-    assert (fst generator <> fst infinity). {
-      unfold fst, infinity, generator.
-      auto. (*
-    }
-    unfold generator, is_infinity, infinity.
-  }
-  destruct generator as (x, y) eqn:eq1.*)
+  destruct generator as (x, y).
+  destruct (is_infinity (x, y)).
+  - intuition.
+  - simpl.
 Admitted.
 
 Lemma same_x_cases: forall (p q : on_curve_t), (fst p = fst q) -> point p = point q \/ point p = neg_point (q).
@@ -847,12 +1029,21 @@ Proof.
   - discriminate eq.
 Qed.
 
-Lemma double_point_not_infty: forall (p : affine_t), snd p =? 0 = false -> is_infinity (double_point p) = false.
+Lemma double_point_preserves_infinity: forall (p : affine_t), is_infinity p = is_infinity (double_point p).
 Proof.
-  destruct p as (px, py).
+  intros p.
+  destruct (is_infinity p) eqn:eq1.
+  - unfold double_point.
+    apply is_infty_means_infty in eq1.
+    rewrite eq1.
+    simpl.
+    rewrite infty_is_infty.
+    reflexivity.
+  - unfold double_point.
   simpl.
   intros H.
   unfold double_point.
+  
 Admitted.
 
 Lemma add_different_comm: forall (p q : affine_t), (fst p <> fst q) -> add_different_points p q = add_different_points q p.
@@ -1104,6 +1295,84 @@ Fixpoint simple_scalar_mult (k : nat) (p : affine_t) : affine_t :=
   | S k1  => (simple_scalar_mult (k1) p) +' p
   end.
 
+Lemma double_point_closed: forall (p : on_curve_t), exists (r : on_curve_t), point r = double_point (point p).
+Proof.
+Admitted.
+
+Lemma add_different_closed: forall (p q : on_curve_t), is_infinity (point p) = false -> is_infinity (point q) = false -> (fst (point p) <> fst (point q)) -> exists r, point r = add_different_points (point p) (point q).
+Proof.
+  intros p q H1 H2 H3.
+  remember (add_different_points (point p) (point q)) as r'.
+  destruct (is_point_on_curve r') eqn:eq1.
+  - remember (mkoncurve r' eq1) as r.
+    exists r.
+    rewrite Heqr.
+    simpl.
+    reflexivity.
+  - remember (is_point_on_curve r') as res.
+    unfold is_point_on_curve in Heqres.
+    destruct r' as (rx, ry) eqn:eqr.
+    destruct (is_infinity (rx, ry)) eqn:eq2.
+    + simpl in Heqres.
+      rewrite Heqres in eq1.
+      discriminate.
+    + simpl in Heqres.
+Admitted.
+
+Lemma add_points_closed: forall (p q : on_curve_t), exists (r : on_curve_t), point r = (point p) +' (point q).
+Proof.
+  intros p q.
+  unfold "+'".
+  destruct (is_infinity (point p)) eqn:eq1. {
+    exists q.
+    intuition.
+  } {
+    destruct (is_infinity (point q)) eqn:eq2. {
+      exists p.
+      intuition.
+    } {
+      destruct (point p =.? point q) eqn:eq3. {
+        exact (double_point_closed p).
+      } {
+        destruct (point p =.? neg_point (point q)) eqn:eq4. {
+          remember (mkoncurve infinity (infty_on_curve)) as i.
+          exists i.
+          rewrite Heqi.
+          intuition.
+        } {
+          assert (eq5: fst (point p) <> fst (point q)). {
+            pose proof same_x_cases p q.
+            intuition.
+            - rewrite <- eqb_leibniz in H.
+              rewrite H in eq3.
+              discriminate.
+            - rewrite <- eqb_leibniz in H.
+              rewrite H in eq4.
+              discriminate.
+          }
+          exact (add_different_closed p q eq1 eq2 eq5).
+        }
+      }
+    }
+  }
+Defined.
+
+Lemma simple_scalar_mult_closed: forall (p : on_curve_t) (k : nat), exists (q : on_curve_t), point q = simple_scalar_mult k p.
+Proof.
+  intros p k.
+  induction (k).
+  - unfold simple_scalar_mult.
+    remember (mkoncurve infinity infty_on_curve) as i.
+    exists i.
+    rewrite Heqi.
+    intuition.
+  - unfold simple_scalar_mult.
+    fold simple_scalar_mult.
+    destruct IHn.
+    rewrite <- H.
+    exact (add_points_closed x p).
+Qed.
+
 Lemma simple_scalar_mult_distributivity: forall (k1 k2 : nat) (p: affine_t), (simple_scalar_mult k1 p) +' (simple_scalar_mult k2 p) = (simple_scalar_mult (k1 + k2) p).
 Proof.
   intros k1 k2 p.
@@ -1119,6 +1388,27 @@ Proof.
     rewrite IHk'.
     reflexivity.
   }
+Qed.
+
+Lemma simple_scalar_mult_distributivity2: forall (k : nat) (p1 p2 : on_curve_t), simple_scalar_mult k (p1 +' p2) = (simple_scalar_mult k p1) +' (simple_scalar_mult k p2).
+Proof.
+  intros.
+  induction k.
+  - simpl. apply add_infty_1.
+  - unfold simple_scalar_mult.
+    fold simple_scalar_mult.
+    rewrite IHk.
+    rewrite (add_assoc (simple_scalar_mult k p1) p1).
+    destruct (simple_scalar_mult_closed p2 k).
+    destruct (add_points_closed x p2).
+    rewrite <- H.
+    rewrite <- H0.
+    rewrite (add_comm p1 x0).
+    rewrite H0.
+    rewrite (add_assoc x p2 p1).
+    rewrite (add_comm p2 p1).
+    rewrite add_assoc.
+    reflexivity.
 Qed.
 
 Lemma simple_scalar_mult_fold: forall (k : nat) (p : affine_t), (simple_scalar_mult k p) +' p = simple_scalar_mult (S k) p.
@@ -1158,7 +1448,94 @@ Definition z_to_bitlist (v : Z) : bitlist :=
   | _ => nil
   end.
 
-Definition scalar_mult_foldi_helper k p :=
+Fixpoint norm_bitlist (l : bitlist) : bitlist :=
+  match l with
+  | false :: l' => norm_bitlist l'
+  | _ => l
+  end.
+
+Fixpoint bitlist_to_pos_helper (l : bitlist) (acc : positive) : positive :=
+  match l with
+  | nil => acc
+  | false :: l' => bitlist_to_pos_helper l' (xO acc)
+  | true :: l' => bitlist_to_pos_helper l' (xI acc)
+  end.
+
+Fixpoint bitlist_to_pos (l : bitlist) : positive :=
+  match l with
+  | false :: l' => bitlist_to_pos l'
+  | true :: l' => bitlist_to_pos_helper l' xH
+  | _ => xH
+  end.
+
+Fixpoint bitlist_to_z (l : bitlist) : Z :=
+  match l with
+  | false :: l' => bitlist_to_z l'
+  | true :: l' => Zpos (bitlist_to_pos l)
+  | _ => 0
+  end.
+
+Lemma pos_bitfold: forall (l : bitlist) a, pos_to_bitlist( bitlist_to_pos_helper l a) = (pos_to_bitlist a) ++ l.
+Proof.
+  intros l. induction l.
+  - simpl. intros a. rewrite List.app_nil_r. reflexivity.
+  - intros b. destruct a; simpl; rewrite IHl; simpl; rewrite <- List.app_assoc; auto.
+Qed.
+
+Lemma bitlist_to_z_id: forall (l : bitlist), z_to_bitlist (bitlist_to_z l) = norm_bitlist l.
+Proof.
+  intros l. induction l.
+  - simpl. reflexivity.
+  - simpl.
+    destruct a.
+    + simpl. apply pos_bitfold.
+    + simpl. apply IHl.
+Qed.
+
+Lemma bitlist_to_pos_append_lsb1: forall (l : bitlist) a, bitlist_to_pos_helper (l ++ [true]) a = (bitlist_to_pos_helper l a)~1%positive.
+Proof.
+  intros l. induction l.
+  - simpl. reflexivity.
+  - intros b; destruct a; simpl; rewrite IHl; reflexivity.
+Qed.
+
+Lemma bitlist_to_z_append_lsb1: forall (l : bitlist), bitlist_to_z (l ++ [true]) = (2 * (bitlist_to_z l) + 1).
+Proof.
+  intros l. induction l.
+  - simpl. reflexivity.
+  - destruct a.
+    + simpl. rewrite bitlist_to_pos_append_lsb1. reflexivity.
+    + simpl. rewrite IHl. reflexivity.
+Qed.
+
+Lemma bitlist_to_pos_append_lsb0: forall (l : bitlist) a, bitlist_to_pos_helper (l ++ [false]) a = (bitlist_to_pos_helper l a)~0%positive.
+Proof.
+  intros l. induction l.
+  - simpl. reflexivity.
+  - intros b; destruct a; simpl; rewrite IHl; reflexivity.
+Qed.
+
+Lemma bitlist_to_z_append_lsb0: forall (l : bitlist), bitlist_to_z (l ++ [false]) = 2 * (bitlist_to_z l).
+Proof.
+  intros l. induction l.
+  - simpl. reflexivity.
+  - destruct a.
+    + simpl. rewrite bitlist_to_pos_append_lsb0. reflexivity.
+    + simpl. rewrite IHl. reflexivity.
+Qed.
+
+Lemma z_to_bitlist_id: forall (v : Z), (0 <= v) -> bitlist_to_z (z_to_bitlist v) = v.
+Proof.
+  intros v H. destruct v.
+  - intuition.
+  - clear H. induction p.
+    + simpl. rewrite bitlist_to_z_append_lsb1. simpl in IHp. rewrite IHp. lia.
+    + simpl. rewrite bitlist_to_z_append_lsb0. simpl in IHp. rewrite IHp. lia.
+    + reflexivity.
+  - lia.
+Qed.
+
+Definition scalar_mult_foldi_helper (k : secp256k1_scalar_t) p :=
   (fun (i_33 : uint_size)
            (q_32 : prod secp256k1_field_element_t secp256k1_field_element_t)
          =>
@@ -1181,7 +1558,141 @@ Definition scalar_mult_foldi_helper k p :=
          | false => double_point q_32
          end).
 
-Definition simple_scalar_mult2_def: forall (k : positive) (p : affine_t), simple_scalar_mult2 k p = simple_scalar_mult (Npos k) p.
+Lemma scalar_mult_body_eq_foldi_helper: forall k p, scalar_mult_foldi_helper k p =
+  (fun (i_33 : uint_size) (q_32 : affine_t) =>
+    if nat_mod_bit k (scalar_bits_v - usize 1 - i_33)
+    then p +' (double_point q_32)
+    else double_point q_32).
+Proof.
+  intros k p.
+  reflexivity.
+Qed.
+
+Lemma foldi_helper_zero: forall (k : secp256k1_scalar_t) p i acc, val _ k = 0 -> scalar_mult_foldi_helper k p i acc = double_point acc.
+Proof.
+  intros.
+  unfold scalar_mult_foldi_helper.
+  rewrite H.
+  rewrite Z.bits_0.
+  reflexivity.
+Qed.
+
+(* From BLSProof.v *)
+Lemma max_unsigned32 : @max_unsigned WORDSIZE32 = 4294967295.
+Proof. reflexivity. Qed.
+
+Lemma modulus32 : @modulus WORDSIZE32 = 4294967296.
+Proof. reflexivity. Qed.
+
+Lemma foldi_step: forall (accT : Type) (n : nat) (i : Z) (f : uint_size -> accT -> accT) (acc : accT), 0 <= i <= @max_unsigned WORDSIZE32 -> foldi_ (S n) (repr i) f acc = foldi_ n (repr (i +1)) f (f (repr i) acc).
+Proof.
+  intros.
+  unfold foldi_.
+  fold (foldi_ n (repr i .+ MachineIntegers.one) f (f (repr i) acc)).
+  fold (foldi_ n (repr (i + 1)) f (f (repr i) acc)).
+  assert (@MachineIntegers.add WORDSIZE32 (repr i) (@MachineIntegers.one WORDSIZE32) = repr (i + 1)). {
+    unfold ".+".
+    rewrite unsigned_one.
+    rewrite (unsigned_repr _ H).
+    reflexivity.
+  }
+  rewrite H0. reflexivity.
+Qed.
+
+Lemma scalar_mult_zero: forall (k : secp256k1_scalar_t) p, val _ k = 0 -> k *' p = infinity.
+Proof.
+  intros.
+  unfold scalar_multiplication.
+  rewrite <- scalar_mult_body_eq_foldi_helper.
+  unfold foldi.
+  destruct (unsigned scalar_bits_v - unsigned (usize 0)).
+  - reflexivity.
+  - assert (forall c, foldi_ (Pos.to_nat p0) c (scalar_mult_foldi_helper k p) infinity = infinity). {
+      induction (Pos.to_nat p0).
+      - unfold foldi_.
+        reflexivity.
+      - intros c.
+        unfold foldi_.
+        rewrite (foldi_helper_zero _ _ _ _ H).
+        fold (foldi_ n (c .+ MachineIntegers.one) (scalar_mult_foldi_helper k p) (double_point infinity)).
+        rewrite double_infty.
+        apply IHn.
+    }
+    apply H0.
+  - reflexivity.
+Qed.
+
+Lemma list_length_nonneg: forall (l : bitlist), 0 <= length l.
+Proof.
+  induction l.
+  - simpl. reflexivity.
+  - simpl. lia.
+Qed.
+
+Lemma usize_sub_helper: forall n, usize (usize 256 - n) = usize (256 - n).
+Proof.
+  intros n.
+  reflexivity.
+Qed.
+
+Lemma usize_sub_helper2: forall n m, 0 <= n <= 256 -> 0 <= m <= 256 -> usize(usize n - usize m) = usize (n - m).
+Proof.
+  intros n m H1 H2. (*
+  rewrite unsigned_repr.
+  assert (uint_size_to_Z (usize n) = n). { simpl.  reflexivity. }
+  reflexivity.*)
+Admitted.
+
+Lemma scalar_mult_foldi_skip_leading_zeros:
+  forall (n m : nat) (l : bitlist) p, (0 <= bitlist_to_z l < scalar_max) -> (length l <= n <= 256) -> (m = length l) ->
+  (foldi_ n (repr (scalar_bits_v - n)) (scalar_mult_foldi_helper (mkznz _ _ (modz scalar_max (bitlist_to_z l))) p) infinity) = (foldi_ m (repr (scalar_bits_v - m)) (scalar_mult_foldi_helper (mkznz _ _ (modz scalar_max (bitlist_to_z l))) p) infinity).
+Proof.
+  intros.
+  unfold scalar_mult_foldi_helper.
+  simpl.
+  rewrite (Zmod_small _ _ H).
+  induction n.
+  - destruct m.
+    + reflexivity.
+    + lia.
+  - destruct (S n =? m)%nat eqn:eq1.
+    + rewrite Nat.eqb_eq in eq1.
+      rewrite <- eq1, eq1.
+      reflexivity.
+    + rewrite Nat.eqb_neq in eq1. 
+      rewrite foldi_step.
+      assert (@repr WORDSIZE32 1 = usize 1). { reflexivity. }
+      rewrite H2.
+      rewrite H2 in IHn.
+      assert ((scalar_bits_v - usize 1) = usize 255). { reflexivity. }
+      rewrite H3.
+      rewrite H3 in IHn.
+      assert (@repr WORDSIZE32 (scalar_bits_v - S n) = usize (scalar_bits_v - S n)). { reflexivity. }
+      rewrite H4.
+      assert (usize 255 - usize (scalar_bits_v - S n) = n). { unfold scalar_bits_v. rewrite usize_sub_helper. }(*
+      assert (Z.of_N (N.of_nat (uint_size_to_nat (@repr WORDSIZE32 (scalar_bits_v - S n)))) = usize (255) - usize(n)). {
+
+      }
+      assert (BinInt.Z.testbit (bitlist_to_z l)
+      (@Z_mod_modulus WORDSIZE32
+         (scalar_bits_v - uint_size_to_Z (repr 1) - uint_size_to_Z(repr (scalar_bits_v - S n)))) = false). {
+           assert ((scalar_bits_v - usize 1) = usize 255). { reflexivity. }
+           assert (@repr WORDSIZE32 1 = usize 1). { reflexivity. }
+           rewrite H3.
+           Set Printing All.
+           rewrite H2. 
+           unfold sca
+           rewrite H2.
+           assert (usize 256 - uint_size_to_Z (repr 1) = 255)
+         }
+  remember (k *' p) as sdfs.
+  unfold scalar_multiplication in Heqsdfs.
+  unfold foldi in Heqsdfs.
+  rewrite <- scalar_mult_body_eq_foldi_helper in Heqsdfs.*)
+Admitted.
+
+
+Definition simple_scalar_mult2_def: forall (k : positive) (p : affine_t), simple_scalar_mult2 k p = simple_scalar_mult (Pos.to_nat k) p.
 Proof.
   intros k p.
   induction k.
@@ -1191,16 +1702,16 @@ Proof.
     rewrite IHk.
     rewrite simple_scalar_mult_distributivity.
     rewrite simple_scalar_mult_fold.
-    assert (S (N.pos k + N.pos k) = N.pos k~1). { lia. }
+    assert (S (Pos.to_nat k + Pos.to_nat k) = Pos.to_nat k~1). { lia. }
     rewrite H.
     reflexivity.
   - unfold simple_scalar_mult2.
     fold simple_scalar_mult2.
     rewrite <- add_to_double.
     rewrite IHk.
-    assert (Nat.add (N.pos k) (N.pos k) = N.pos k~0). { lia. }
-    rewrite <- H.
     rewrite simple_scalar_mult_distributivity.
+    assert (Nat.add (Pos.to_nat k) (Pos.to_nat k) = Pos.to_nat k~0). { lia. }
+    rewrite H.
     reflexivity.
   - simpl.
     rewrite add_infty_1.
@@ -1223,22 +1734,28 @@ Proof.
   - intros. destruct a; apply IHl.
 Qed.
 
-Lemma simple_scalar_mult3_def: forall (k : positive) (p : affine_t), simple_scalar_mult3 (pos_to_bitlist k) p infinity = simple_scalar_mult2 k p.
+Lemma simple_scalar_mult3_def: forall (k : nat) (p : affine_t), simple_scalar_mult3 (z_to_bitlist (Z.of_nat k)) p infinity = simple_scalar_mult k p.
 Proof.
   intros k.
-  induction k;
-  intros p;
-  unfold pos_to_bitlist;
-  fold pos_to_bitlist;
-  unfold simple_scalar_mult3;
-  fold simple_scalar_mult3;
-  unfold simple_scalar_mult2;
-  fold simple_scalar_mult2.
-  - rewrite <- IHk. 
-    apply simple_scalar_mult3_lsb1.
-  - rewrite <- IHk.
-    apply simple_scalar_mult3_lsb0.
-  - rewrite double_infty, add_infty_1. reflexivity.
+  destruct k.
+  - intros p. simpl. reflexivity.
+  - unfold z_to_bitlist.
+    fold z_to_bitlist.
+    unfold Z.of_nat.
+    assert (S k = Pos.to_nat (Pos.of_succ_nat k)). { intuition. }
+    rewrite H.
+    intros p.
+    rewrite <- (simple_scalar_mult2_def (Pos.of_succ_nat k) p).
+    clear H.
+    revert p.
+    remember (Pos.of_succ_nat k) as k'.
+    clear Heqk'.
+    induction k'; intros p;
+    unfold pos_to_bitlist, simple_scalar_mult3, simple_scalar_mult2;
+    fold pos_to_bitlist; fold simple_scalar_mult3; fold simple_scalar_mult2.
+    + rewrite <- IHk'. apply simple_scalar_mult3_lsb1.
+    + rewrite <- IHk'. apply simple_scalar_mult3_lsb0.
+    + rewrite double_infty, add_infty_1. reflexivity.
 Qed.
 
 Definition nat_to_scalar (n : nat) : secp256k1_scalar_t.
@@ -1306,71 +1823,36 @@ Qed.
 
 Lemma scalar_mult_def: forall (k : secp256k1_scalar_t) (p : affine_t), k *' p = simple_scalar_mult3 (z_to_bitlist k) p infinity.
 Proof.
-  intros k p.
-  destruct (val _ k) eqn:eq1. {
-    simpl.
-    unfold "*'".
-    unfold nat_mod_get_bit.
-    unfold nat_mod_bit.
-    rewrite eq1.
-    auto.
-  } {
-    destruct k.
-    simpl in eq1.
-    subst.
-    assert (Z.to_nat (Z.pos p0) = Npos (p0)). { lia. }
-    rewrite H.
-    rewrite <- simple_scalar_mult2_def.
-    rewrite <- simple_scalar_mult3_def.
-    clear H.
-    induction p0. {
-      simpl.
-      unfold simple_scalar_mult3.
-      fold simple_scalar_mult2.
-      remember (mkznz _ (Z.pos p0~1) inZnZ) as k.
-      assert (val _ k = Z.pos p0~1). { destruct k. simpl. apply znz_inj in Heqk. simpl in Heqk. exact Heqk. }
-      pose proof Zpos_helper1 scalar_max scalar_max_prime k p0 H.
-      pose proof IHp0 H0.
-    } {
-      unfold simple_scalar_mult2.
-      fold simple_scalar_mult2.
-    } {
-      simpl.
-      unfold scalar_multiplication.
-      assert (forall (i : uint_size), 0 <= i < scalar_bits_v -> nat_mod_get_bit (mkznz _ 1 inZnZ) (scalar_bits_v - usize 1 - i) = if (i =? 255) then nat_mod_one else nat_mod_zero). {
-        intros i H.
-        unfold scalar_bits_v in H.
-        destruct (i =? 255) eqn:eq1. {
-          rewrite Z.eqb_eq in eq1.
-          rewrite eq1.
-          auto.
-        } {
-          rewrite Z.eqb_neq in eq1.
-          unfold nat_mod_get_bit, nat_mod_bit.
-          assert (from_uint_size(scalar_bits_v - usize 1 - i) <> 0). {
-            unfold scalar_bits_v.
-            assert (usize 256 = 256). { auto. }
-            assert (usize 1 = 1). { auto. }
-            rewrite H0, H1.
-            rewrite H0 in H.
-            simpl.
-            assert (BinInt.Z.of_N (N.of_nat (uint_size_to_nat (Z_to_uint_size (256)))) = 256). { auto. }
-            assert (BinInt.Z.of_N (N.of_nat (uint_size_to_nat (Z_to_uint_size (1)))) = 1). { auto. }
-            rewrite H2, H3.
-            assert (@Z_mod_modulus WORDSIZE32 (256 - 1 - i) = 256 - 1 - i). {
-              assert (0 <= 256 - 1 - i < 256). { lia. }
-              auto.
-            }
-            intuition.
-          }
-          auto.
-        }
-      }
-    }
-  } (*
-  } {
-    simpl.
-  }*)
+  intros k.
+  remember (bitlist_to_z (z_to_bitlist k)) as g'.
+  pose proof scalar_small k as [H0 _].
+  pose proof z_to_bitlist_id k H0.
+  rewrite <- Heqg' in H.
+  symmetry in H.
+  pose proof znz_duplicate _ k g' H.
+  destruct H1.
+  remember (mkznz _ g' x) as g.
+  intros p.
+  assert (k *' p = g *' p). { rewrite H1. reflexivity. }
+  rewrite H2.
+  clear H2.
+  revert p.
+  subst.
+  clear H. clear H0. clear H1.
+  induction (z_to_bitlist k).
+  - remember (mkznz _ (bitlist_to_z []) x) as g.
+    assert (val _ g = 0). { rewrite Heqg. simpl. reflexivity. }
+    intros p.
+    apply (scalar_mult_zero _ _ H).
+  - destruct a;
+    unfold simple_scalar_mult3;
+    fold simple_scalar_mult3;
+    rewrite double_infty.
+    unfold scalar_multiplication.
+    intros p. (*
+    rewrite <- (scalar_mult_body_eq_foldi_helper g p).
+    pose proof foldi_helper_zero g p.
+    .*)
 Admitted.
 
 (* Follows from Langrange's Theorem  since the order of the group is prime *)
@@ -1384,6 +1866,15 @@ Proof.
   rewrite scalar_mult_def.
   rewrite scalar_mult_def.
   rewrite scalar_mult_def.
+  pose proof scalar_small k1 as [H1 _].
+  pose proof scalar_small k2 as [H2 _].
+  pose proof scalar_small (k1 +% k2) as [H3 _].
+  rewrite <- (Z2Nat.id k1 H1).
+  rewrite <- (Z2Nat.id k2 H2).
+  rewrite <- (Z2Nat.id (k1 +% k2) H3).
+  rewrite simple_scalar_mult3_def.
+  rewrite simple_scalar_mult3_def.
+  rewrite simple_scalar_mult3_def.
   rewrite simple_scalar_mult_distributivity.
   unfold "+%".
   unfold add.
@@ -1396,95 +1887,31 @@ Proof.
   assert (0 <= scalar_max). { unfold scalar_max. intuition. }
   rewrite (Z2Nat.inj_mod _ _ H H0).
   rewrite simple_scalar_mult_mod.
-  pose proof scalar_small k1 as [H1 _].
-  pose proof scalar_small k2 as [H2 _].
   rewrite (Z2Nat.inj_add _ _ H1 H2).
   reflexivity.
 Qed.
 
-Lemma double_point_closure: forall (p : on_curve_t), exists (r : on_curve_t), point r = double_point (point p).
+Lemma scalar_mult_distributivity2: forall (k : secp256k1_scalar_t) (p1 p2 : on_curve_t), k *' (p1 +' p2) = k *' p1 +' k *' p2.
 Proof.
-Admitted.
-
-Lemma add_different_closed: forall (p q : on_curve_t), is_infinity (point p) = false -> is_infinity (point q) = false -> (fst (point p) <> fst (point q)) -> exists r, point r = add_different_points (point p) (point q).
-Proof.
-  intros p q H1 H2 H3.
-  remember (add_different_points (point p) (point q)) as r'.
-  destruct (is_point_on_curve r') eqn:eq1.
-  - remember (mkoncurve r' eq1) as r.
-    exists r.
-    rewrite Heqr.
-    simpl.
-    reflexivity.
-  - remember (is_point_on_curve r') as res.
-    unfold is_point_on_curve in Heqres.
-    destruct r' as (rx, ry) eqn:eqr.
-    destruct (is_infinity (rx, ry)) eqn:eq2.
-    + simpl in Heqres.
-      rewrite Heqres in eq1.
-      discriminate.
-    + simpl in Heqres.
-Admitted.
-
-Lemma add_points_closed: forall (p q : on_curve_t), exists (r : on_curve_t), point r = (point p) +' (point q).
-Proof.
-  intros p q.
-  unfold "+'".
-  destruct (is_infinity (point p)) eqn:eq1. {
-    exists q.
-    intuition.
-  } {
-    destruct (is_infinity (point q)) eqn:eq2. {
-      exists p.
-      intuition.
-    } {
-      destruct (point p =.? point q) eqn:eq3. {
-        exact (double_point_closure p).
-      } {
-        destruct (point p =.? neg_point (point q)) eqn:eq4. {
-          remember (mkoncurve infinity (infty_on_curve)) as i.
-          exists i.
-          rewrite Heqi.
-          intuition.
-        } {
-          assert (eq5: fst (point p) <> fst (point q)). {
-            pose proof same_x_cases p q.
-            intuition.
-            - rewrite <- eqb_leibniz in H.
-              rewrite H in eq3.
-              discriminate.
-            - rewrite <- eqb_leibniz in H.
-              rewrite H in eq4.
-              discriminate.
-          }
-          exact (add_different_closed p q eq1 eq2 eq5).
-        }
-      }
-    }
-  }
-Qed.
-
-Lemma simple_scalar_mult_closed: forall (p : on_curve_t) (k : nat), exists (q : on_curve_t), point q = simple_scalar_mult k p.
-Proof.
-  intros p k.
-  induction (k).
-  - unfold simple_scalar_mult.
-    remember (mkoncurve infinity infty_on_curve) as i.
-    exists i.
-    rewrite Heqi.
-    intuition.
-  - unfold simple_scalar_mult.
-    fold simple_scalar_mult.
-    destruct IHn.
-    rewrite <- H.
-    exact (add_points_closed x p).
+  intros.
+  rewrite scalar_mult_def.
+  rewrite scalar_mult_def.
+  rewrite scalar_mult_def.
+  pose proof scalar_small k as [H1 _].
+  rewrite <- (Z2Nat.id k H1).
+  rewrite simple_scalar_mult3_def.
+  rewrite simple_scalar_mult3_def.
+  rewrite simple_scalar_mult3_def.
+  apply simple_scalar_mult_distributivity2.
 Qed.
 
 Lemma scalar_mult_closed: forall (p : on_curve_t) (k : secp256k1_scalar_t), exists (q : on_curve_t), point q = k *' (point p).
 Proof.
   intros p k.
-  rewrite <- (nat_to_scalar_id k).
   rewrite scalar_mult_def.
+  pose proof scalar_small k as [H1 _].
+  rewrite <- (Z2Nat.id k H1).
+  rewrite simple_scalar_mult3_def.
   apply simple_scalar_mult_closed.
 Qed.
 
@@ -1509,23 +1936,49 @@ Proof.
   rewrite scalar_mult_def, scalar_mult_def, scalar_mult_def.
   unfold "*%", mul.
   simpl.
-  assert (0 <= a). { pose proof scalar_small a. lia. }
-  assert (0 <= b). { pose proof scalar_small b. lia. }
-  assert (0 <= a * b). { lia. }
-  assert (0 <= scalar_max). { unfold scalar_max. intuition. }
-  rewrite (Z2Nat.inj_mod _ _ H1 H2).
+  pose proof scalar_small a as [H _].
+  pose proof scalar_small b as [H1 _].
+  rewrite <- (Z2Nat.id a H).
+  rewrite <- (Z2Nat.id b H1).
+  rewrite simple_scalar_mult3_def.
+  rewrite simple_scalar_mult3_def.
+  rewrite (Z2Nat.id a H).
+  rewrite (Z2Nat.id b H1).
+  assert (scalar_max > 0). { unfold scalar_max. intuition. }
+  pose proof Z_mod_lt (a * b) _ H0 as [H2 _].
+  rewrite <- (Z2Nat.id _ H2).
+  rewrite simple_scalar_mult3_def.
+  assert (0 <= a * b). { intuition. }
+  assert (0 <= scalar_max). { intuition. }
+  rewrite (Z2Nat.inj_mod _ _ H3 H4).
   rewrite <- simple_scalar_mult_mod.
-  rewrite (Z2Nat.inj_mul _ _ H H0).
+  assert (Z.to_nat (Z.mul a b) = Nat.mul (Z.to_nat a) (Z.to_nat b)). { intuition. }
+  rewrite H5.
+  clear H5.
   induction (Z.to_nat a).
   - unfold simple_scalar_mult.
     simpl.
     reflexivity.
-  - unfold simple_scalar_mult.
+  - unfold simple_scalar_mult, simple_scalar_mult.
     fold simple_scalar_mult.
     rewrite IHn.
     rewrite scalar_mult_fold_once.
     reflexivity.
 Qed.
+
+Lemma scalar_mult_generator_zero: forall (a : secp256k1_scalar_t), a = nat_mod_zero <-> is_infinity (a *' generator) = true.
+Proof.
+  intros a.
+  split.
+  - intros H.
+    rewrite H.
+    rewrite scalar_mult_def.
+    simpl.
+    exact infty_is_infty.
+  - intros H.
+    apply is_infty_means_infty in H.
+Admitted.
+
 
 Lemma scalar_mult_generator_not_zero: forall (a : secp256k1_scalar_t), a <> nat_mod_zero -> is_infinity (a *' generator) = false.
 Proof.
@@ -1539,14 +1992,343 @@ Fixpoint simple_batch_scalar_multiplication
   | (a, p) :: r => a *' p +' (simple_batch_scalar_multiplication r)
   end.
 
+Fixpoint batch_scalar_opt_helper
+(head : (secp256k1_scalar_t × affine_t)) (elems : seq (secp256k1_scalar_t × affine_t))
+: seq (secp256k1_scalar_t × affine_t) :=
+  match (head, elems) with
+  | ((a1, p1), (a2, p2) :: r) => (a1 -% a2,p1) :: batch_scalar_opt_helper (a2, p1 +' p2) r
+  | _ => head :: elems
+  end.
+
+Definition batch_scalar_opt (elems : seq (secp256k1_scalar_t × affine_t)) :=
+  match elems with
+  | head :: r => batch_scalar_opt_helper head r
+  | _ => elems
+  end.
+
+Fixpoint on_curve_list_to_affines (elems : seq (secp256k1_scalar_t × on_curve_t)) : seq (secp256k1_scalar_t × affine_t) :=
+  match elems with
+  | (a, P) :: r => (a, point P) :: on_curve_list_to_affines r
+  | nil => nil
+  end.
+
+Lemma seq_len_eq: forall A B (l1 : seq A) (l2 : seq B), seq_len l1 = seq_len l2 <-> length l1 = length l2.
+Proof.
+  intros.
+  split.
+  - intros H. unfold seq_len in H. apply Nnat.Nat2N.inj. exact H.
+  - intros H. unfold seq_len. rewrite H. reflexivity.
+Qed.
+
+Lemma on_curve_list_to_affines_length: forall (elems : seq (secp256k1_scalar_t × on_curve_t)),
+  seq_len (on_curve_list_to_affines elems) = seq_len elems.
+Proof.
+  intros elems.
+  apply seq_len_eq.
+  induction elems.
+    - simpl. reflexivity.
+    - destruct a as (a,P). simpl. rewrite IHelems. reflexivity.
+Qed.
+
+Lemma on_curve_list_to_affines_length2: forall a b (elems : seq (secp256k1_scalar_t × on_curve_t)),
+  seq_len (a :: on_curve_list_to_affines elems) = seq_len (b :: elems).
+Proof.
+  intros.
+  rewrite seq_len_eq.
+  simpl.
+  Search (S ?a = S ?b <-> ?a = ?b).
+  rewrite Nat.succ_inj_wd.
+  rewrite <- seq_len_eq.
+  apply on_curve_list_to_affines_length.
+Qed.
+
+(*Lemma on_curve_list_to_affines_concat1: forall a P b c,
+  on_curve_list_to_affines (((a, P) :: b) ++ c) = (a, point P) :: on_curve_list_to_affines (b ++ c).
+Proof.
+  intros.
+  revert c. revert P. revert a.
+  induction b.
+  - intros. simpl. reflexivity.
+  - intros. *)
+
+Lemma on_curve_list_to_affines_concat2: forall a b,
+  on_curve_list_to_affines (a ++ b) = on_curve_list_to_affines a ++ on_curve_list_to_affines b.
+Proof.
+  intros a.
+  induction a.
+  - simpl. reflexivity.
+  - intros b.
+    destruct a as (a, P).
+    unfold on_curve_list_to_affines.
+    fold on_curve_list_to_affines.
+    rewrite <- app_comm_cons.
+    simpl.
+    rewrite IHa.
+    reflexivity.
+Qed.
+
+Lemma usize_eq: forall (x : Z), 0 <= x <= @max_unsigned WORDSIZE32 -> (x = usize x).
+Proof.
+  intros.
+  simpl.
+  unfold Z.of_N, N.of_nat, uint_size_to_nat, from_uint_size, nat_uint_sizable.
+  pose proof @unsigned_repr WORDSIZE32 _ H.
+  rewrite H0.
+  fold (N.of_nat (Z.to_nat x)).
+  fold (Z.of_N (N.of_nat (Z.to_nat x))).
+  lia.
+Qed.
+
+Definition product_sum_foldi_helper (elems : seq (secp256k1_scalar_t × affine_t)) : uint_size -> affine_t -> affine_t :=
+  fun i_43 res_42 =>
+    let '(ai_44, pi_45) :=
+      seq_index elems (i_43) in 
+    let res_42 :=
+      add_points res_42 (scalar_multiplication ai_44 pi_45) in 
+    res_42.
+
+Lemma product_sum_eq_foldi_helper: forall (elems : seq (secp256k1_scalar_t × affine_t)),
+  product_sum_foldi_helper elems = fun i_43 res_42 =>
+  let '(ai_44, pi_45) :=
+    seq_index elems (i_43) in 
+  let res_42 :=
+    add_points res_42 (scalar_multiplication ai_44 pi_45) in 
+  res_42.
+Proof.
+  intros elems. reflexivity.
+Qed.
+
+Lemma product_sum_foldi_helper_zero: forall a P elems,
+  product_sum_foldi_helper ((a, P) :: elems) (repr 0) infinity = a *' P.
+Proof.
+  intros.
+  unfold product_sum_foldi_helper.
+  unfold seq_index.
+  simpl.
+  rewrite add_infty_1.
+  reflexivity.
+Qed.
+
+Lemma product_sum_foldi_ignore_last: forall elems1 elems2 acc,
+  length elems1 <= @max_unsigned WORDSIZE32 ->
+  foldi (repr 0) (length elems1) (product_sum_foldi_helper (on_curve_list_to_affines elems1 ++ on_curve_list_to_affines elems2)) acc =
+  foldi (repr 0) (length elems1) (product_sum_foldi_helper (on_curve_list_to_affines elems1)) acc.
+Proof.
+  intros.
+  remember (product_sum_foldi_helper (on_curve_list_to_affines elems1 ++ on_curve_list_to_affines elems2)) as f.
+  remember (product_sum_foldi_helper (on_curve_list_to_affines elems1)) as g.
+  pose proof (foldi_equiv _ (repr 0) (length elems1) f g acc).
+  Set Printing All.
+  assert (forall i acc, @unsigned WORDSIZE32 (repr 0) <= unsigned i < unsigned (Z_to_uint_size (Z.of_N (N.of_nat (length elems1)))) -> f i acc = g i acc). {
+    intros.
+    rewrite Heqf, Heqg.
+    unfold product_sum_foldi_helper.
+    unfold seq_index.
+    assert (uint_size_to_nat i < length (on_curve_list_to_affines elems1))%nat. {
+      destruct i as (i', i_small).
+      unfold Z_to_uint_size in H1.
+      assert (0 <= Z.of_N (length elems1) <= @max_unsigned WORDSIZE32). { lia. }
+      rewrite (@unsigned_repr WORDSIZE32 (Z.of_N (length elems1)) H2) in H1.
+      simpl in H1.
+      unfold uint_size_to_nat.
+      simpl.
+      pose proof on_curve_list_to_affines_length elems1.
+      unfold seq_len in H3.
+      lia.
+    }
+    rewrite (app_nth1 _ _ _  H2).
+    reflexivity.
+  }
+  rewrite (H0 H1). reflexivity.
+Qed.
+
+Lemma product_sum_foldi_skip_first: forall a elems acc,
+  foldi_ (length elems) (repr (1)) (product_sum_foldi_helper (a :: on_curve_list_to_affines elems)) acc =
+  foldi_ (length elems) (repr 0) (product_sum_foldi_helper (on_curve_list_to_affines elems)) acc.
+Proof.
+  intros.
+  revert a. revert acc.
+  rewrite <- (rev_involutive elems).
+  induction (rev elems).
+  - simpl. reflexivity.
+  - intros acc a0.
+    rewrite rev_length.
+    unfold rev.
+    fold (rev l).
+    rewrite on_curve_list_to_affines_concat2.
+    assert (0 <= 0 <= @max_unsigned WORDSIZE32). { easy. }
+    rewrite (foldi_step _ _ _ _ _ H).
+    assert (0 <= 1 <= @max_unsigned WORDSIZE32). { easy. }
+    rewrite (foldi_step _ _ _ _ _ H0).
+    rewrite IHn.
+    (*rewrite <- IHn0. *)
+Admitted.
+
+Lemma product_sum_foldi_add_acc: forall elems n acc,
+  0 <= n < @max_unsigned WORDSIZE32 ->
+  foldi_ (length elems) (repr n) (product_sum_foldi_helper (on_curve_list_to_affines elems)) acc =
+  acc +' (foldi_ (length elems) (repr n) (product_sum_foldi_helper (on_curve_list_to_affines elems)) infinity).
+Proof.
+  intros elems.
+  induction elems.
+  - intros. simpl. rewrite add_infty_2. reflexivity.
+  - intros.
+    unfold length.
+    fold (length elems).
+    assert (0 <= n <= @max_unsigned WORDSIZE32). { intuition. }
+    rewrite (foldi_step _ _ _ _ _ H0).
+    rewrite (foldi_step _ _ _ _ _ H0). (*
+    assert (0 <= n0 + 1)
+    rewrite IHn.*)
+Admitted.
+
+Lemma product_sum_def: forall (elems : seq (secp256k1_scalar_t × on_curve_t)),
+  0 <= seq_len elems <= @max_unsigned WORDSIZE32 -> product_sum (on_curve_list_to_affines elems) = simple_batch_scalar_multiplication (on_curve_list_to_affines elems).
+Proof.
+  intros elems.
+  induction elems.
+  - reflexivity.
+  - intros H.
+    destruct a as (a, P). 
+    unfold on_curve_list_to_affines.
+    fold on_curve_list_to_affines.
+    unfold simple_batch_scalar_multiplication.
+    fold simple_batch_scalar_multiplication.
+    assert (0 <= seq_len elems <= seq_len ((a, P) :: elems)). { unfold seq_len. simpl. intuition. }
+    assert (0 <= seq_len elems <= @max_unsigned WORDSIZE32). { lia. }
+    rewrite <- (IHelems H1).
+    unfold product_sum.
+    unfold foldi.
+    rewrite <- product_sum_eq_foldi_helper.
+    rewrite <- product_sum_eq_foldi_helper.
+    unfold foldi.
+    pose proof @unsigned_repr WORDSIZE32.
+    unfold Z_to_uint_size.
+    rewrite (on_curve_list_to_affines_length2 _ (a,P) _).
+    rewrite (@unsigned_repr WORDSIZE32 _ H).
+    rewrite on_curve_list_to_affines_length.
+    rewrite (@unsigned_repr WORDSIZE32 _ H1).
+    assert (0 <= 0 <= @max_unsigned WORDSIZE32). { easy. }
+    unfold usize.
+    unfold Z_uint_sizable.
+    rewrite (@unsigned_repr WORDSIZE32 _ H3).
+    simpl.
+    assert (Pos.to_nat (Pos.of_succ_nat (length elems)) = S (length elems)). { lia. }
+    rewrite H4.
+    rewrite (foldi_step _ (length elems)).
+    rewrite product_sum_foldi_helper_zero.
+    + destruct (seq_len elems) eqn:eq1.
+     * simpl.
+        unfold seq_len in eq1.
+        assert (0%N = N.of_nat 0). { lia. }
+        rewrite H5 in eq1.
+        pose proof (Nnat.Nat2N.inj (length elems) (0%nat) eq1).
+        rewrite H6.
+        simpl.
+        rewrite add_infty_2. reflexivity.
+      * simpl.
+        assert (Pos.to_nat p = length elems). {
+          unfold seq_len in eq1.
+          intuition.
+        }
+        rewrite H5.
+        rewrite product_sum_foldi_skip_first.
+        assert (0 <= 0 < @max_unsigned WORDSIZE32). { easy. }
+        apply (product_sum_foldi_add_acc elems 0 (a *' P) H6).
+    + exact H3.
+Qed.
+    
+
+Lemma batch_scalar_opt_eq: forall (elems : seq (secp256k1_scalar_t × on_curve_t)),
+  simple_batch_scalar_multiplication (batch_scalar_opt (on_curve_list_to_affines elems)) = simple_batch_scalar_multiplication (on_curve_list_to_affines elems).
+Proof.
+  intros elems.
+  destruct elems.
+  - auto.
+  - revert p.
+    induction elems.
+    + intros p. unfold batch_scalar_opt, batch_scalar_opt_helper. destruct p as (a, P). reflexivity.
+    + intros p.
+      destruct a as (a1, p1).
+      destruct p as (a2, p2).
+      unfold batch_scalar_opt, batch_scalar_opt_helper.
+      unfold on_curve_list_to_affines.
+      fold on_curve_list_to_affines.
+      fold batch_scalar_opt_helper.
+      unfold simple_batch_scalar_multiplication.
+      fold simple_batch_scalar_multiplication.
+      destruct (add_points_closed p2 p1).
+      rewrite <- H.
+      assert (batch_scalar_opt_helper (a1, x) (on_curve_list_to_affines elems) = batch_scalar_opt (on_curve_list_to_affines ((a1, x) :: elems))). {
+        unfold batch_scalar_opt, on_curve_list_to_affines.
+        fold on_curve_list_to_affines. reflexivity.
+      }
+      rewrite H0.
+      rewrite IHelems.
+      unfold on_curve_list_to_affines.
+      fold on_curve_list_to_affines.
+      unfold simple_batch_scalar_multiplication.
+      fold simple_batch_scalar_multiplication.
+      rewrite <- add_assoc.
+      assert (a2 -% a1 = a2 +% nat_mod_neg a1). { field. }
+      rewrite H1.
+      rewrite <- scalar_mult_distributivity.
+      rewrite H.
+      rewrite scalar_mult_distributivity2.
+      remember (simple_batch_scalar_multiplication (on_curve_list_to_affines elems)) as r.
+      rewrite <- (add_assoc).
+      rewrite <- (add_assoc).
+      rewrite (add_assoc (a2 *' p2) _ _).
+      rewrite scalar_mult_distributivity.
+      assert (nat_mod_neg a1 +% a1 = nat_mod_zero). { field. }
+      rewrite H2.
+      rewrite (scalar_mult_zero nat_mod_zero p2).
+      * rewrite add_infty_2.
+        reflexivity.
+      * simpl. apply Zmod_0_l.
+Qed.
+
+Lemma wordsize32_eq: @wordsize WORDSIZE32 = 32.
+Proof.
+  reflexivity.
+Qed.
+
+Lemma batch_scalar_mult_reduc: forall (elems : seq (secp256k1_scalar_t × on_curve_t)),
+  batch_scalar_multiplication (on_curve_list_to_affines elems) = simple_batch_scalar_multiplication (on_curve_list_to_affines elems).
+Proof.
+  intros elems.
+  unfold batch_scalar_multiplication.
+
 Lemma batch_scalar_mult_def: forall (elems :  seq (secp256k1_scalar_t × affine_t)),
   batch_scalar_multiplication elems = simple_batch_scalar_multiplication elems.
 Proof.
   intros elems.
   induction elems as [ | h t IHn].
-  - unfold batch_scalar_multiplication.
-    simpl.
-    reflexivity.
+  - reflexivity.
+  - destruct t.
+    + unfold batch_scalar_multiplication.
+      assert (0 <= 1 <= @max_unsigned WORDSIZE32). {  easy. }
+      rewrite <- (usize_eq 1 H).
+      simpl.
+      unfold foldi.
+      simpl.
+      assert (Zbits.P_mod_two_p 1 (@wordsize WORDSIZE32) = 1). { easy. }
+      rewrite H0.
+      simpl.
+      assert (0%nat = uint_size_to_nat(@repr WORDSIZE32 0)). { easy. }
+      rewrite <- H1.
+      destruct h as (a, P).
+      simpl.
+      rewrite add_infty_1, add_infty_2.
+      reflexivity.
+    + unfold batch_scalar_multiplication.
+      assert (0 <= 1 <= @max_unsigned WORDSIZE32). {  easy. }
+      rewrite <- (usize_eq 1 H).
+      unfold foldi.
+      assert (seq_len (h :: p :: t) - 1 > 0). { unfold seq_len, length. lia. }
+      simpl.
+      simpl.
+    
   - destruct h as (a, p).
     unfold simple_batch_scalar_multiplication.
     fold simple_batch_scalar_multiplication.

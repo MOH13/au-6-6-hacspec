@@ -122,25 +122,34 @@ pub fn scalar_multiplication(k: Secp256k1Scalar, p: Affine) -> Affine {
     q
 }
 
-/// Calculates the sum a_1 * P_1 + ... + a_i * P_i + ... + A_m * P_m
-pub fn batch_scalar_multiplication(elems: Seq<(Secp256k1Scalar, Affine)>) -> Affine {
-    #[allow(unused_assignments)]
-    let mut res = INFINITY();
-    if elems.len() == 0 {
-        res = INFINITY()
+pub fn batch_scalar_optimization(elems: Seq<(Secp256k1Scalar, Affine)>) -> Seq<(Secp256k1Scalar, Affine)> {
+    let mut new_elems = elems;
+    if new_elems.len() == 0 {
+        new_elems = new_elems
     }
     else {
-        let mut new_elems = elems;
-        for i in 0..new_elems.len()-2 {
+        for i in 0..new_elems.len()-1 {
             let (ai, pi) = new_elems[i];
             let (aiplus1, piplus1) = new_elems[i+1];
             new_elems[i] = (ai - aiplus1, pi);
             new_elems[i+1] = (aiplus1, add_points(pi, piplus1));
         }
-        for i in 0..new_elems.len()-1 {
-            let (ai, pi) = new_elems[i];
-            res = add_points(res, scalar_multiplication(ai, pi))
-        }
+    }
+    new_elems
+}
+
+pub fn product_sum(elems: Seq<(Secp256k1Scalar, Affine)>) -> Affine {
+    #[allow(unused_assignments)]
+    let mut res = INFINITY();
+    for i in 0..elems.len() {
+        let (ai, pi) = elems[i];
+        res = add_points(res, scalar_multiplication(ai, pi))
     }
     res
+}
+
+/// Calculates the sum a_1 * P_1 + ... + a_i * P_i + ... + A_m * P_m efficiently
+pub fn batch_scalar_multiplication(elems: Seq<(Secp256k1Scalar, Affine)>) -> Affine {
+    let optimized = batch_scalar_optimization(elems);
+    product_sum(optimized)
 }
