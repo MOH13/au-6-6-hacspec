@@ -14,26 +14,21 @@ pub fn sign(a: Secp256k1Scalar, A: Affine, v: Secp256k1Scalar, m: &ByteSeq) -> (
     ((Vx, Vy),r)
 }
 
-
+/// Given a public key and a message, this method verifies the signature of the message
 #[allow(non_snake_case)]
-pub fn public_keys_to_byte_seqs (L: &Seq<Affine>) -> Seq<ByteSeq> {
-    let mut L_as_bytes = Seq::<ByteSeq>::new(L.len());
-    for i in 0..L.len() {
-        let (x, y) = L[i];
-        L_as_bytes[i] = x.to_byte_seq_le().concat(&y.to_byte_seq_le());
-    }
-    L_as_bytes
+pub fn verify(A: Affine, m: &ByteSeq, signature : (Affine, Secp256k1Scalar)) -> bool {
+    let (V, r) = signature;
+    let g = GENERATOR();
+    let (Vx, Vy) = V;
+    let (Ax, Ay) = A;
+    let c = hash(&Vx.to_byte_seq_le().concat(&Vy.to_byte_seq_le().concat(&Ax.to_byte_seq_le().concat(&Ay.to_byte_seq_le().concat(m)))));
+    let c_as_scalar = Secp256k1Scalar::from_byte_seq_le(c);
+    let gr = scalar_multiplication(r, g);
+    let cA = scalar_multiplication(c_as_scalar, A);
+    V == add_points(gr, cA) && is_point_on_curve(A) && !is_infinity(A)
 }
 
-#[allow(non_snake_case)]
-pub fn concat_byte_seqs_to_single_byte_seq (L_as_bytes: &Seq<ByteSeq>) -> ByteSeq {
-    let mut L_byte_concat: ByteSeq = ByteSeq::new(0);
-    for i in 0..L_as_bytes.len(){
-        L_byte_concat = L_byte_concat.concat(&L_as_bytes[i]);
-    }
-    L_byte_concat
-}
-
+///Helper method that computes the 'a' values in the MuSig scheme
 #[allow(non_snake_case)]
 pub fn compute_a_values(L: &Seq<Affine>) -> Seq<Sha256Digest>{
     let mut a: Seq<Sha256Digest> = Seq::<Sha256Digest>::new(L.len());
@@ -71,7 +66,7 @@ pub fn check_ti_match_Ri (t: Seq<Sha256Digest>, R_seq: Seq<Affine>) -> bool {
 }
 
 #[allow(non_snake_case)]
-/// Computes the aggregate of all random points used in multi-signature signing and returns this point
+/// Computes the aggregate point of all random points used in the MuSig scheme and returns this point
 pub fn compute_agg_R (R_seq: &Seq<Affine>) -> Affine {
     let mut R = INFINITY();
     for i in 0..R_seq.len() { // compute the random point to be used in signature, as an "aggreate" of all random points
@@ -81,15 +76,16 @@ pub fn compute_agg_R (R_seq: &Seq<Affine>) -> Affine {
 }
 
 #[allow(non_snake_case)]
+///Computes the specific signer's s value
 pub fn compute_own_s (v: Secp256k1Scalar, agg_pk: Affine, R: Affine, m: ByteSeq, L: Seq<Affine>, r: Secp256k1Scalar) -> Secp256k1Scalar {
     let g = GENERATOR();
-    let (Vx, Vy) = scalar_multiplication(v, g);
+    let (Vx, Vy) = scalar_multiplication(v, g); // Signer's public key
     let V_as_bytes = Vx.to_byte_seq_le().concat(&Vy.to_byte_seq_le());
 
-    let (Rx, Ry) = R;
+    let (Rx, Ry) = R; // The aggregate random point
     let R_as_bytes = Rx.to_byte_seq_le().concat(&Ry.to_byte_seq_le());
 
-    let (Px, Py) = agg_pk;
+    let (Px, Py) = agg_pk; // Aggregate public key of all signers
     let agg_pk_as_bytes = Px.to_byte_seq_le().concat(&Py.to_byte_seq_le());
 
     let pk_R_m_as_bytes = agg_pk_as_bytes.concat(&R_as_bytes.concat(&m));
@@ -165,15 +161,23 @@ pub fn multi_sig_verify(L: Seq<Affine>, m: &ByteSeq, signature: (Affine, Secp256
     scalar_multiplication(s, g).eq(&add_points(R, agg_pk_a_c)) && add_points(R, agg_pk_a_c).eq(&add_points(R, agg_pk_c))
 }
 
+///Helper method that transforms a sequence of Affine points into byte sequences
 #[allow(non_snake_case)]
-pub fn verify(A: Affine, m: &ByteSeq, signature : (Affine, Secp256k1Scalar)) -> bool {
-    let (V, r) = signature;
-    let g = GENERATOR();
-    let (Vx, Vy) = V;
-    let (Ax, Ay) = A;
-    let c = hash(&Vx.to_byte_seq_le().concat(&Vy.to_byte_seq_le().concat(&Ax.to_byte_seq_le().concat(&Ay.to_byte_seq_le().concat(m)))));
-    let c_as_scalar = Secp256k1Scalar::from_byte_seq_le(c);
-    let gr = scalar_multiplication(r, g);
-    let cA = scalar_multiplication(c_as_scalar, A);
-    V == add_points(gr, cA) && is_point_on_curve(A) && !is_infinity(A)
-} 
+pub fn public_keys_to_byte_seqs (L: &Seq<Affine>) -> Seq<ByteSeq> {
+    let mut L_as_bytes = Seq::<ByteSeq>::new(L.len());
+    for i in 0..L.len() {
+        let (x, y) = L[i];
+        L_as_bytes[i] = x.to_byte_seq_le().concat(&y.to_byte_seq_le());
+    }
+    L_as_bytes
+}
+
+///Helper method that transforms a sequence of bytesequences into one byte sequence
+#[allow(non_snake_case)]
+pub fn concat_byte_seqs_to_single_byte_seq (L_as_bytes: &Seq<ByteSeq>) -> ByteSeq {
+    let mut L_byte_concat: ByteSeq = ByteSeq::new(0);
+    for i in 0..L_as_bytes.len(){
+        L_byte_concat = L_byte_concat.concat(&L_as_bytes[i]);
+    }
+    L_byte_concat
+}
