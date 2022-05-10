@@ -2,16 +2,22 @@ use hacspec_lib::*;
 use hacspec_secp256k1::*;
 use hacspec_sha256::*;
 
+#[allow(non_snake_case)]
+pub fn generate_c(V: Affine, A: Affine, m: &ByteSeq) -> Secp256k1Scalar {
+    let (Vx, Vy) = V;
+    let (Ax, Ay) = A;
+    let c = hash(&Vx.to_byte_seq_le().concat(&Vy.to_byte_seq_le().concat(&Ax.to_byte_seq_le().concat(&Ay.to_byte_seq_le().concat(m)))));
+    Secp256k1Scalar::from_byte_seq_le(c)
+}
+
 /// Creates a Schnorr signature for a single signer
 #[allow(non_snake_case)]
 pub fn sign(a: Secp256k1Scalar, A: Affine, v: Secp256k1Scalar, m: &ByteSeq) -> (Affine, Secp256k1Scalar) {
     let g = GENERATOR();
-    let (Vx,Vy) = scalar_multiplication(v, g);
-    let (Ax, Ay) = A;
-    let c = hash(&Vx.to_byte_seq_le().concat(&Vy.to_byte_seq_le().concat(&Ax.to_byte_seq_le().concat(&Ay.to_byte_seq_le().concat(m)))));
-    let c_as_scalar = Secp256k1Scalar::from_byte_seq_le(c);
-    let r = v - a * c_as_scalar;
-    ((Vx, Vy),r)
+    let V = scalar_multiplication(v, g);
+    let c = generate_c(V, A, m);
+    let r = v - a * c;
+    (V,r)
 }
 
 /// Given a public key and a message, this method verifies the signature of the message
@@ -19,12 +25,9 @@ pub fn sign(a: Secp256k1Scalar, A: Affine, v: Secp256k1Scalar, m: &ByteSeq) -> (
 pub fn verify(A: Affine, m: &ByteSeq, signature : (Affine, Secp256k1Scalar)) -> bool {
     let (V, r) = signature;
     let g = GENERATOR();
-    let (Vx, Vy) = V;
-    let (Ax, Ay) = A;
-    let c = hash(&Vx.to_byte_seq_le().concat(&Vy.to_byte_seq_le().concat(&Ax.to_byte_seq_le().concat(&Ay.to_byte_seq_le().concat(m)))));
-    let c_as_scalar = Secp256k1Scalar::from_byte_seq_le(c);
+    let c = generate_c(V, A, m);
     let gr = scalar_multiplication(r, g);
-    let cA = scalar_multiplication(c_as_scalar, A);
+    let cA = scalar_multiplication(c, A);
     V == add_points(gr, cA) && is_point_on_curve(A) && !is_infinity(A)
 }
 
@@ -172,7 +175,7 @@ pub fn public_keys_to_byte_seqs (L: &Seq<Affine>) -> Seq<ByteSeq> {
     L_as_bytes
 }
 
-///Helper method that transforms a sequence of bytesequences into one byte sequence
+///Helper method that transforms a sequence of byte sequences into one byte sequence
 #[allow(non_snake_case)]
 pub fn concat_byte_seqs_to_single_byte_seq (L_as_bytes: &Seq<ByteSeq>) -> ByteSeq {
     let mut L_byte_concat: ByteSeq = ByteSeq::new(0);
@@ -180,4 +183,45 @@ pub fn concat_byte_seqs_to_single_byte_seq (L_as_bytes: &Seq<ByteSeq>) -> ByteSe
         L_byte_concat = L_byte_concat.concat(&L_as_bytes[i]);
     }
     L_byte_concat
+}
+
+#[allow(non_snake_case)]
+pub fn valid_As(As: &Seq<Affine>) -> bool {
+    let mut res = true;
+    for i in 0..As.len(){
+        let A = As[i];
+        res = res && is_point_on_curve (A) && !is_infinity(A)
+    }
+    res
+}
+
+/// Verifies a batch of signatures and corresponding messages based on https://en.bitcoin.it/wiki/BIP_0340
+#[allow(non_snake_case)]
+pub fn batch_verification (m: Seq<ByteSeq>, As: Seq<Affine>, sigs: Seq<(Affine, Secp256k1Scalar)>, rand: Seq<Secp256k1Scalar>) -> bool {
+    #[allow(unused_assignments)]
+    let mut res = false;
+    if m.len() != As.len() || As.len() != sigs.len() || sigs.len() != rand.len() || !valid_As(&As) {
+        res = false;
+    } else {
+        let mut Vs = Seq::<Affine>::new(sigs.len());
+        let mut rs = Seq::<Secp256k1Scalar>::new(sigs.len());
+        for i in 0..sigs.len() {
+            let (V, r) = sigs[i];
+            Vs[i] = V;
+            rs[i] = r;
+        }
+        let g = GENERATOR();
+        let mut cs = Seq::<Secp256k1Scalar>::new(sigs.len());
+        let mut grs = Seq::<(Secp256k1Scalar, Affine)>::new(sigs.len());
+        let mut cAs = Seq::<(Secp256k1Scalar, Affine)>::new(sigs.len());
+        let mut Vmults = Seq::<(Secp256k1Scalar, Affine)>::new(sigs.len());
+        for i in 0..sigs.len() {
+            cs[i] = generate_c(Vs[i], As[i], &m[i]);
+            grs[i] = (rs[i] * rand[i], g);
+            cAs[i] = (cs[i] * rand[i], As[i]);
+            Vmults[i] = (rand[i], Vs[i])
+        }
+        res = batch_scalar_multiplication (&Vmults) == add_points(batch_scalar_multiplication (&grs), batch_scalar_multiplication(&cAs))
+    }
+    res
 }

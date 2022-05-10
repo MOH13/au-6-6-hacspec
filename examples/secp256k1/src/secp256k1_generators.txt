@@ -38,7 +38,7 @@ impl Arbitrary for AffineGenerator {
         let res = scalar_multiplication(k, p);
         match g.choose(&[res, INFINITY()]) {
             Some(v) => v.into(),
-            None => panic!("Whoops"),
+            None => panic!("Whoops"), // 🧐
         }
     }
 }

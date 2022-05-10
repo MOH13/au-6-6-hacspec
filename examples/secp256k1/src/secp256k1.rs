@@ -122,8 +122,8 @@ pub fn scalar_multiplication(k: Secp256k1Scalar, p: Affine) -> Affine {
     q
 }
 
-pub fn batch_scalar_optimization(elems: Seq<(Secp256k1Scalar, Affine)>) -> Seq<(Secp256k1Scalar, Affine)> {
-    let mut new_elems = elems;
+pub fn batch_scalar_optimization(elems: &Seq<(Secp256k1Scalar, Affine)>) -> Seq<(Secp256k1Scalar, Affine)> {
+    let mut new_elems = elems.clone();
     if new_elems.len() == 0 {
         new_elems = new_elems
     }
@@ -138,7 +138,7 @@ pub fn batch_scalar_optimization(elems: Seq<(Secp256k1Scalar, Affine)>) -> Seq<(
     new_elems
 }
 
-pub fn product_sum(elems: Seq<(Secp256k1Scalar, Affine)>) -> Affine {
+pub fn product_sum(elems: &Seq<(Secp256k1Scalar, Affine)>) -> Affine {
     #[allow(unused_assignments)]
     let mut res = INFINITY();
     for i in 0..elems.len() {
@@ -149,7 +149,8 @@ pub fn product_sum(elems: Seq<(Secp256k1Scalar, Affine)>) -> Affine {
 }
 
 /// Calculates the sum a_1 * P_1 + ... + a_i * P_i + ... + A_m * P_m efficiently
-pub fn batch_scalar_multiplication(elems: Seq<(Secp256k1Scalar, Affine)>) -> Affine {
+pub fn batch_scalar_multiplication(elems: &Seq<(Secp256k1Scalar, Affine)>) -> Affine {
+    //Should do some sorting in the beginning
     let optimized = batch_scalar_optimization(elems);
-    product_sum(optimized)
+    product_sum(&optimized)
 }
