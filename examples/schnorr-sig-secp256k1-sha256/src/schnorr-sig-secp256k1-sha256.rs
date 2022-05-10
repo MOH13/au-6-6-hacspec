@@ -161,7 +161,7 @@ pub fn multi_sig_verify(L: Seq<Affine>, m: &ByteSeq, signature: (Affine, Secp256
 
 
     // signature is correct if g x s = R + sum(pk_i x a_i x c) = R + agg_pk x c
-    scalar_multiplication(s, g).eq(&add_points(R, agg_pk_a_c)) && add_points(R, agg_pk_a_c).eq(&add_points(R, agg_pk_c))
+    scalar_multiplication(s, g) == add_points(R, agg_pk_a_c) && add_points(R, agg_pk_a_c) == add_points(R, agg_pk_c)
 }
 
 ///Helper method that transforms a sequence of Affine points into byte sequences

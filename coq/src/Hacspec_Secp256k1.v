@@ -1194,10 +1194,10 @@ Proof.
     rewrite infty_is_infty.
     reflexivity.
   - unfold double_point.
-  simpl.
+    simpl. (*
   intros H.
   unfold double_point.
-  
+  *)
 Admitted.
 
 Lemma add_different_comm: forall (p q : affine_t), (fst p <> fst q) -> add_different_points p q = add_different_points q p.
@@ -1814,7 +1814,7 @@ Proof.
       rewrite H3 in IHn.
       assert (@repr WORDSIZE32 (scalar_bits_v - S n) = usize (scalar_bits_v - S n)). { reflexivity. }
       rewrite H4.
-      assert (usize 255 - usize (scalar_bits_v - S n) = n). { unfold scalar_bits_v. rewrite usize_sub_helper. }(*
+      assert (usize 255 - usize (scalar_bits_v - S n) = n). { unfold scalar_bits_v. rewrite usize_sub_helper. (*}
       assert (Z.of_N (N.of_nat (uint_size_to_nat (@repr WORDSIZE32 (scalar_bits_v - S n)))) = usize (255) - usize(n)). {
 
       }

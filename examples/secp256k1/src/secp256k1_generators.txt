@@ -1,5 +1,5 @@
 /// Helper type for generating quickcheck Arbitrary trait
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 struct AffineGenerator(Affine);
 
 impl From<AffineGenerator> for Affine {
@@ -14,7 +14,7 @@ impl From<&Affine> for AffineGenerator {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct Secp256k1ScalarGenerator(Secp256k1Scalar);
 
 impl From<Secp256k1ScalarGenerator> for Secp256k1Scalar {
