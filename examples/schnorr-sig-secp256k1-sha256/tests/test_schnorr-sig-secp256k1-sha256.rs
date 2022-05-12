@@ -77,22 +77,54 @@ fn test_wrong_s() {
       .quickcheck(helper as fn(Secp256k1ScalarGenerator, Secp256k1ScalarGenerator, Vec<u8>) -> TestResult);
 }
 
-/*
 #[test]
 #[allow(non_snake_case)]
 fn test_multi_sig() {
-  fn helper(av: Vec<(Secp256k1ScalarGenerator, Secp256k1ScalarGenerator)>, m: Vec<u8>) -> TestResult {
-    let av: Vec<(Secp256k1Scalar, Secp256k1Scalar)> = av.into();
-    
+  fn helper(avs: Vec<(Secp256k1ScalarGenerator, Secp256k1ScalarGenerator, Secp256k1ScalarGenerator)>, m: Vec<u8>) -> TestResult {
+    if avs.len() == 0 {
+      return TestResult::discard()
+    }
+    let mut secret_keys = Seq::<Secp256k1Scalar>::new(avs.len());
+    let mut public_keys = Seq::<Affine>::new(avs.len());
+    let mut rands = Seq::<Secp256k1Scalar>::new(avs.len());
+    let mut random_points = Seq::<Affine>::new(rands.len());
+    for i in 0..avs.len() {
+      let a: Secp256k1Scalar = avs[i].0.into();
+      let v: Secp256k1Scalar = avs[i].1.into();
+      if a == Secp256k1Scalar::ZERO() {
+        return TestResult::discard()
+      }
+      if v == Secp256k1Scalar::ZERO() {
+        return TestResult::discard()
+      }
+      let A = scalar_multiplication(a, GENERATOR());
+      secret_keys[i] = a;
+      public_keys[i] = A;
+      rands[i] = avs[i].2.into();
+      random_points[i] = scalar_multiplication(rands[i], GENERATOR());
+    }
     let m = ByteSeq::from_vec(m.iter().map(|i| (*i).into()).collect());
 
-    TestResult::from_bool(false)
+    // begin actual signing process
+    let a_values = compute_a_values(&public_keys);
+    let agg_pk = compute_agg_pk(&public_keys, &a_values);
+    let agg_R = compute_agg_R(&random_points);
+
+    let mut s_values = Seq::<Secp256k1Scalar>::new(avs.len());
+    for i in 0..avs.len(){
+      s_values[i] = compute_own_s(secret_keys[i], agg_pk, agg_R, m.clone(), &public_keys, rands[i]);
+    }
+    let agg_s = compute_agg_s(s_values);
+    let signature = (agg_R, agg_s);
+
+    TestResult::from_bool(multi_sig_verify(public_keys, &m, signature))
   }
   QuickCheck::new()
+      .gen(Gen::new(5))
       .tests(5)
-      .quickcheck(helper as fn(Vec<(Secp256k1ScalarGenerator, Secp256k1ScalarGenerator)>, Vec<u8>) -> TestResult)
+      .quickcheck(helper as fn(Vec<(Secp256k1ScalarGenerator, Secp256k1ScalarGenerator, Secp256k1ScalarGenerator)>, Vec<u8>) -> TestResult)
 }
- */
+
 #[test]
 #[allow(non_snake_case)]
 fn test_lots_of_batch_verification() {
