@@ -7,7 +7,7 @@ extern crate quickcheck;
 //#[macro_use(quickcheck)]
 extern crate quickcheck_macros;
 
-include!("../../secp256k1/src/secp256k1_generators.txt");
+include!("../../secp256k1/tests/secp256k1_generators.txt");
 
 #[test]
 #[allow(non_snake_case)]
@@ -27,7 +27,7 @@ fn test_lots_of_tests() {
     TestResult::from_bool(verify(A, &m, sig))
   }
   QuickCheck::new()
-      .tests(50)
+      .tests(5)
       .quickcheck(helper as fn(Secp256k1ScalarGenerator, Secp256k1ScalarGenerator, Vec<u8>) -> TestResult);
 }
 
@@ -50,7 +50,7 @@ fn test_wrong_r() {
     TestResult::from_bool(!verify(A, &m, (add_points(V, GENERATOR()), r)))
   }
   QuickCheck::new()
-      .tests(50)
+      .tests(5)
       .quickcheck(helper as fn(Secp256k1ScalarGenerator, Secp256k1ScalarGenerator, Vec<u8>) -> TestResult)
 }
 
@@ -73,7 +73,7 @@ fn test_wrong_s() {
     TestResult::from_bool(!verify(A, &m, (V, r - Secp256k1Scalar::ONE())))
   }
   QuickCheck::new()
-      .tests(50)
+      .tests(5)
       .quickcheck(helper as fn(Secp256k1ScalarGenerator, Secp256k1ScalarGenerator, Vec<u8>) -> TestResult);
 }
 
@@ -153,7 +153,7 @@ fn test_lots_of_batch_verification() {
     TestResult::from_bool(batch_verification(messages, public_keys, signatures, rands))
   }
   QuickCheck::new()
-      .gen(Gen::new(20))
-      .tests(50)
+      .gen(Gen::new(10))
+      .tests(2)
       .quickcheck(helper as fn(Vec<(Secp256k1ScalarGenerator, Secp256k1ScalarGenerator, Vec<u8>, Secp256k1ScalarGenerator)>) -> TestResult);
 }

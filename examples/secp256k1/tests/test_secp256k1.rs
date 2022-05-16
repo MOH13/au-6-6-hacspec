@@ -7,7 +7,7 @@ extern crate quickcheck;
 #[macro_use(quickcheck)]
 extern crate quickcheck_macros;
 
-include!("../src/secp256k1_generators.txt");
+include!("./secp256k1_generators.txt");
 
 #[test]
 fn test_infty_add_1() {
