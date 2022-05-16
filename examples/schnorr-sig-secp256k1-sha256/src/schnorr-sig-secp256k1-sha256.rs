@@ -133,35 +133,15 @@ pub fn compute_agg_s(s_seq: Seq<Secp256k1Scalar>) -> Secp256k1Scalar {
 pub fn multi_sig_verify(L: Seq<Affine>, m: &ByteSeq, signature: (Affine, Secp256k1Scalar)) -> bool {
     #[allow(unused_assignments)]
     let mut res = false;
-    let mut a: Seq<Sha256Digest> = Seq::<Sha256Digest>::new(L.len());
-    let mut L_as_bytes: Seq<ByteSeq> = Seq::<ByteSeq>::new(L.len());
     let (R, s) = signature;
     let g = GENERATOR();
 
     if L.len() < 1 {
         res = false
     } else {
-        // Transform all public keys into byte sequences
-        for i in 0..L.len() {
-            let (x, y) = L[i];
-            L_as_bytes[i] = x.to_byte_seq_le().concat(&y.to_byte_seq_le());
-        }
+        let a = compute_a_values(&L);
 
-        // Concatenate all byte sequences of public keys into one sequence
-        let mut L_byte_concat: Seq<U8> = Seq::<U8>::new(0);
-        for i in 0..L_as_bytes.len() {
-            L_byte_concat = L_byte_concat.concat(&L_as_bytes[i]);
-        }
-
-        for i in 0..L.len() {
-            a[i] = hash(&L_byte_concat.concat(&L_as_bytes[i]));
-        }
-
-        let mut agg_pk = INFINITY();
-        for i in 0..L.len() {
-            let pk_i_a_i = scalar_multiplication(Secp256k1Scalar::from_byte_seq_le(a[i]), L[i]); //pk_i * a_i
-            agg_pk = add_points(agg_pk, pk_i_a_i); // aggregated key is addition of all (pk_i * a_i)
-        }
+        let agg_pk = compute_agg_pk(&L, &a);
 
         let (Rx, Ry) = R;
         let R_as_bytes = Rx.to_byte_seq_le().concat(&Ry.to_byte_seq_le());
