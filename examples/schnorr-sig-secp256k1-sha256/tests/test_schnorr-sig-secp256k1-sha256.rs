@@ -7,7 +7,7 @@ extern crate quickcheck;
 //#[macro_use(quickcheck)]
 extern crate quickcheck_macros;
 
-include!("../../secp256k1/src/secp256k1_generators.txt");
+include!("../../secp256k1/tests/secp256k1_generators.txt");
 
 #[test]
 #[allow(non_snake_case)]
@@ -133,7 +133,6 @@ fn test_lots_of_batch_verification() {
     let mut public_keys = Seq::<Affine>::new(avms.len());
     let mut signatures = Seq::<(Affine, Secp256k1Scalar)>::new(avms.len());
     let mut rands = Seq::<Secp256k1Scalar>::new(avms.len());
-    println!("{}", avms.len());
     for i in 0..avms.len() {
       let a = avms[i].0.into();
       let v = avms[i].1.into();
@@ -154,7 +153,7 @@ fn test_lots_of_batch_verification() {
     TestResult::from_bool(batch_verification(messages, public_keys, signatures, rands))
   }
   QuickCheck::new()
-      .gen(Gen::new(5))
-      .tests(5)
+      .gen(Gen::new(10))
+      .tests(2)
       .quickcheck(helper as fn(Vec<(Secp256k1ScalarGenerator, Secp256k1ScalarGenerator, Vec<u8>, Secp256k1ScalarGenerator)>) -> TestResult);
 }

@@ -1,13 +1,13 @@
 use hacspec_lib::*;
 
+const SCALAR_BITS: usize = 256;
+
 public_nat_mod!(
     type_name: Secp256k1FieldElement,
     type_of_canvas: FieldCanvas,
     bit_size_of_field: 256,
     modulo_value: "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F"
 );
-
-const SCALAR_BITS: usize = 256;
 
 public_nat_mod!(
     type_name: Secp256k1Scalar,
