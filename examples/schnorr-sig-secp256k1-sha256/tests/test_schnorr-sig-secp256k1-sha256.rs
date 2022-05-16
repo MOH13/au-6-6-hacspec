@@ -27,7 +27,7 @@ fn test_lots_of_tests() {
     TestResult::from_bool(verify(A, &m, sig))
   }
   QuickCheck::new()
-      .tests(5)
+      .tests(50)
       .quickcheck(helper as fn(Secp256k1ScalarGenerator, Secp256k1ScalarGenerator, Vec<u8>) -> TestResult);
 }
 
@@ -50,7 +50,7 @@ fn test_wrong_r() {
     TestResult::from_bool(!verify(A, &m, (add_points(V, GENERATOR()), r)))
   }
   QuickCheck::new()
-      .tests(5)
+      .tests(50)
       .quickcheck(helper as fn(Secp256k1ScalarGenerator, Secp256k1ScalarGenerator, Vec<u8>) -> TestResult)
 }
 
@@ -73,7 +73,7 @@ fn test_wrong_s() {
     TestResult::from_bool(!verify(A, &m, (V, r - Secp256k1Scalar::ONE())))
   }
   QuickCheck::new()
-      .tests(5)
+      .tests(50)
       .quickcheck(helper as fn(Secp256k1ScalarGenerator, Secp256k1ScalarGenerator, Vec<u8>) -> TestResult);
 }
 
@@ -101,7 +101,6 @@ fn test_lots_of_batch_verification() {
     let mut public_keys = Seq::<Affine>::new(avms.len());
     let mut signatures = Seq::<(Affine, Secp256k1Scalar)>::new(avms.len());
     let mut rands = Seq::<Secp256k1Scalar>::new(avms.len());
-    println!("{}", avms.len());
     for i in 0..avms.len() {
       let a = avms[i].0.into();
       let v = avms[i].1.into();
@@ -122,7 +121,7 @@ fn test_lots_of_batch_verification() {
     TestResult::from_bool(batch_verification(messages, public_keys, signatures, rands))
   }
   QuickCheck::new()
-      .gen(Gen::new(5))
-      .tests(5)
+      .gen(Gen::new(20))
+      .tests(50)
       .quickcheck(helper as fn(Vec<(Secp256k1ScalarGenerator, Secp256k1ScalarGenerator, Vec<u8>, Secp256k1ScalarGenerator)>) -> TestResult);
 }
