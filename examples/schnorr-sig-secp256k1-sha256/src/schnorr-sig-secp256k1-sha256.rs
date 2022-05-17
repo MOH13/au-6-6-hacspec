@@ -1,9 +1,14 @@
+//! An implementation of Schnorr signatures in the [hacspec](https://github.com/hacspec/hacspec) specification language.
+//! 
+//! Many properties of this library have been proven in !INSERT LINK!.
+
 use hacspec_lib::*;
 use hacspec_secp256k1::*;
 use hacspec_sha256::*;
 
 #[allow(non_snake_case)]
-pub fn generate_c(V: Affine, A: Affine, m: &ByteSeq) -> Secp256k1Scalar {
+/// Helper function for generating c (the scalar based on the message hash).
+fn generate_c(V: Affine, A: Affine, m: &ByteSeq) -> Secp256k1Scalar {
     let (Vx, Vy) = V;
     let (Ax, Ay) = A;
     let c = hash(
@@ -15,7 +20,7 @@ pub fn generate_c(V: Affine, A: Affine, m: &ByteSeq) -> Secp256k1Scalar {
     Secp256k1Scalar::from_byte_seq_le(c)
 }
 
-/// Creates a Schnorr signature for a single signer
+/// Creates a Schnorr signature for a single signer.
 #[allow(non_snake_case)]
 pub fn sign(
     a: Secp256k1Scalar,
@@ -54,7 +59,7 @@ pub fn compute_a_values(L: &Seq<Affine>) -> Seq<Sha256Digest> {
 }
 
 #[allow(non_snake_case)]
-/// Computes the "aggregate" public key from the signers public keys and their respective a values. Assumes L and a are sorted similarly
+/// Computes the "aggregate" public key from the signers public keys and their respective a values. Assumes L and a are sorted similarly.
 pub fn compute_agg_pk(L: &Seq<Affine>, a: &Seq<Sha256Digest>) -> Affine {
     let mut agg_pk = INFINITY();
     for i in 0..L.len() {
@@ -65,7 +70,7 @@ pub fn compute_agg_pk(L: &Seq<Affine>, a: &Seq<Sha256Digest>) -> Affine {
 }
 
 #[allow(non_snake_case)]
-/// Hashes the points in R_seq and checks them against t. Assumes R_seq and t are sorted similarly i.e. if point x is on index y in R_seq, the hash of x must be on index y in t
+/// Hashes the points in R_seq and checks them against t. Assumes R_seq and t are sorted similarly i.e. if point x is on index y in R_seq, the hash of x must be on index y in t.
 pub fn check_ti_match_Ri(t: Seq<Sha256Digest>, R_seq: Seq<Affine>) -> bool {
     let mut check = true;
     for i in 0..R_seq.len() {
@@ -202,7 +207,7 @@ pub fn valid_As(As: &Seq<Affine>) -> bool {
     res
 }
 
-/// Verifies a batch of signatures and corresponding messages based on https://en.bitcoin.it/wiki/BIP_0340
+/// Verifies a batch of signatures and corresponding messages based on <https://en.bitcoin.it/wiki/BIP_0340>.
 #[allow(non_snake_case)]
 pub fn batch_verification(
     m: Seq<ByteSeq>,

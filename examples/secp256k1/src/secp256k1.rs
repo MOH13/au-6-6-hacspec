@@ -1,3 +1,7 @@
+//! An implementation of the secp256k1 curve in the [hacspec](https://github.com/hacspec/hacspec) specification language.
+//! 
+//! Many properties of this library have been proven in !INSERT LINK!.
+
 use hacspec_lib::*;
 
 const SCALAR_BITS: usize = 256;
@@ -16,26 +20,28 @@ public_nat_mod!(
     modulo_value: "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141"
 );
 
+/// Represents a point in affine coordinates.
+/// The point at infinity is encoded as the otherwise invalid value (1,0).
 pub type Affine = (Secp256k1FieldElement, Secp256k1FieldElement);
 
-/// Generates an affine representation of point at infinity (uses a placeholder off the curve)
+/// Generates an affine representation of point at infinity (uses a placeholder off the curve).
 #[allow(non_snake_case)]
 pub fn INFINITY() -> Affine {
     (Secp256k1FieldElement::ONE(), Secp256k1FieldElement::ZERO())
 }
 
-/// Checks whether the given point is the point at infinity
+/// Checks whether the given point is the point at infinity.
 pub fn is_infinity(p: Affine) -> bool {
     p == INFINITY()
 }
 
 
-/// Checks if the given point is a valid point on the curve
+/// Checks if the given point is a valid point on the curve.
 pub fn is_point_on_curve(p: Affine) -> bool {
     let (x,y) = p;
     is_infinity(p) || y.exp(2u32) == x.exp(3u32) + Secp256k1FieldElement::from_literal(7u128)
 }
-/// Returns the base point, G, for the Secp256k1 curve in affine coordinates
+/// Returns the base point, G, for the Secp256k1 curve in affine coordinates.
 #[allow(non_snake_case)]
 pub fn GENERATOR() -> Affine {
     (Secp256k1FieldElement::from_byte_seq_be(&byte_seq!(
@@ -52,12 +58,13 @@ pub fn GENERATOR() -> Affine {
     )))
 }
 
+/// Negates the given point in affine coordinates.
 pub fn neg_point(p: Affine) -> Affine {
     let (x,y) = p;
     (x, y.neg())
 }
 
-/// Helper function for add_points
+/// Helper function for add_points.
 fn add_different_points(p: Affine, q: Affine) -> Affine {
     let (px,py) = p;
     let (qx,qy) = q;
@@ -68,7 +75,7 @@ fn add_different_points(p: Affine, q: Affine) -> Affine {
     (x3,y3)
 }
 
-/// Doubles the given point in affine coordinates
+/// Doubles the given point in affine coordinates.
 pub fn double_point(p: Affine) -> Affine {
     #[allow(unused_assignments)]
     let mut result = INFINITY();
@@ -86,6 +93,7 @@ pub fn double_point(p: Affine) -> Affine {
     result
 }
 
+/// Adds two arbitrary points in affine coordinates.
 pub fn add_points(p: Affine, q: Affine) -> Affine {
     #[allow(unused_assignments)]
     let mut result = INFINITY();
@@ -110,7 +118,7 @@ pub fn add_points(p: Affine, q: Affine) -> Affine {
     result
 }
 
-/// Performs scalar multiplication on the given point in affine coordinates
+/// Performs scalar multiplication on the given point in affine coordinates.
 pub fn scalar_multiplication(k: Secp256k1Scalar, p: Affine) -> Affine {
     let mut q = INFINITY();
     for i in 0..SCALAR_BITS {
@@ -122,7 +130,9 @@ pub fn scalar_multiplication(k: Secp256k1Scalar, p: Affine) -> Affine {
     q
 }
 
-pub fn batch_scalar_optimization(elems: &Seq<(Secp256k1Scalar, Affine)>) -> Seq<(Secp256k1Scalar, Affine)> {
+/// Helper function to generate an optimized but equivalent input to product_sum.
+/// sdfdsf
+fn batch_scalar_optimization(elems: &Seq<(Secp256k1Scalar, Affine)>) -> Seq<(Secp256k1Scalar, Affine)> {
     let mut new_elems = elems.clone();
     if new_elems.len() == 0 {
         new_elems = new_elems
@@ -138,7 +148,8 @@ pub fn batch_scalar_optimization(elems: &Seq<(Secp256k1Scalar, Affine)>) -> Seq<
     new_elems
 }
 
-pub fn product_sum(elems: &Seq<(Secp256k1Scalar, Affine)>) -> Affine {
+/// Calculates the sum a_1 * P_1 + ... + a_i * P_i + ... + A_m * P_m in a simple fashion.
+fn product_sum(elems: &Seq<(Secp256k1Scalar, Affine)>) -> Affine {
     #[allow(unused_assignments)]
     let mut res = INFINITY();
     for i in 0..elems.len() {
@@ -148,7 +159,7 @@ pub fn product_sum(elems: &Seq<(Secp256k1Scalar, Affine)>) -> Affine {
     res
 }
 
-/// Calculates the sum a_1 * P_1 + ... + a_i * P_i + ... + A_m * P_m efficiently
+/// Calculates the sum a_1 * P_1 + ... + a_i * P_i + ... + A_m * P_m efficiently.
 pub fn batch_scalar_multiplication(elems: &Seq<(Secp256k1Scalar, Affine)>) -> Affine {
     //Should do some sorting in the beginning
     let optimized = batch_scalar_optimization(elems);

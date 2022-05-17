@@ -4,3 +4,5 @@ Cargo.lock
 .DS_Store
 coq/.DS_Store
 lib/.DS_Store
+coq/doc/
+/*.v
