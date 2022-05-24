@@ -1,3 +1,15 @@
+# au-6-6-hacspec
+
+This is a fork of the [hacspec](https://github.com/hacspec/hacspec) repository. This fork adds two modules [`hacspec-secp256k1`](https://gitlab.au.dk/au648318/au-6-6-hacspec/-/tree/main/examples/secp256k1) and [`hacspec-schnorr-sig-secp256k1-sha256`](https://gitlab.au.dk/au648318/au-6-6-hacspec/-/tree/main/examples/schnorr-sig-secp256k1-sha256).
+
+## Documentation
+
+Documentation can be found at:
+- **hacspec implementation:** `todo`
+- **Coq proofs:** `todo`
+
+The old README can be seen below.
+
 # hacspec [![hacspec chat][chat-image]][chat-link]
 
 <img src="https://raw.githubusercontent.com/hacspec/hacspec/master/img/mascot.png" width=100 style="float: left;"> A specification language for crypto primitives in Rust.
