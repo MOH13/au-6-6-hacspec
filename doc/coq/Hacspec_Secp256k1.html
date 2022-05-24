@@ -1,0 +1,920 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>Hacspec_Secp256k1</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Hacspec_Secp256k1</h1>
+
+<div class="code">
+</div>
+
+<div class="doc">
+This file was automatically generated using Hacspec 
+</div>
+<div class="code">
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Hacspec_Lib</span> <span class="id" title="var">MachineIntegers</span>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">Coq</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">ZArith</span> <span class="id" title="var">Nat</span> <span class="id" title="var">List</span>.<br/>
+<span class="id" title="keyword">Import</span> <span class="id" title="var">List.ListNotations</span>.<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">Z_scope</span>.<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">bool_scope</span>.<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">hacspec_scope</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Hacspec_Lib</span>.<br/>
+<span class="id" title="keyword">Import</span> <span class="id" title="var">Bool</span>.<br/>
+<span class="id" title="keyword">Import</span> <span class="id" title="var">GZnZ</span>.<br/>
+<span class="id" title="keyword">Import</span> <span class="id" title="var">Coq.ZArith.Zdiv</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">ZDivEucl</span> <span class="id" title="var">BinIntDef</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Lia</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Znumtheory</span> <span class="id" title="var">Field_theory</span> <span class="id" title="var">Field</span>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">Coqprime</span> <span class="id" title="keyword">Require</span> <span class="id" title="var">GZnZ</span>.<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">elem_max</span> := 0<span class="id" title="var">xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F</span>.<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">scalar_max</span> := 0<span class="id" title="var">xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">field_canvas_t</span> := <span class="id" title="var">nseq</span> (<span class="id" title="var">int8</span>) (32).<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">secp256k1_field_element_t</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="var">nat_mod</span> <span class="id" title="var">elem_max</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">scalar_bits_v</span> : <span class="id" title="var">uint_size</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="var">usize</span> 256.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">scalar_canvas_t</span> := <span class="id" title="var">nseq</span> (<span class="id" title="var">int8</span>) (32).<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">secp256k1_scalar_t</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="var">nat_mod</span> <span class="id" title="var">scalar_max</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Notation</span> &quot;'affine_t'" := ((<br/>
+&nbsp;&nbsp;<span class="id" title="var">secp256k1_field_element_t</span> ×<br/>
+&nbsp;&nbsp;<span class="id" title="var">secp256k1_field_element_t</span><br/>
+)) : <span class="id" title="var">hacspec_scope</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">infinity</span>  : <span class="id" title="var">affine_t</span> :=<br/>
+&nbsp;&nbsp;(<span class="id" title="var">nat_mod_one</span> , <span class="id" title="var">nat_mod_zero</span> ).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">is_infinity</span> (<span class="id" title="var">p_3</span> : <span class="id" title="var">affine_t</span>) : <span class="id" title="var">bool</span> :=<br/>
+&nbsp;&nbsp;(<span class="id" title="var">p_3</span>) =.? (<span class="id" title="var">infinity</span> ).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">is_point_on_curve</span> (<span class="id" title="var">p_0</span> : <span class="id" title="var">affine_t</span>) : <span class="id" title="var">bool</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> '(<span class="id" title="var">x_1</span>, <span class="id" title="var">y_2</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">p_0</span> <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;(<span class="id" title="var">is_infinity</span> (<span class="id" title="var">p_0</span>)) || (<span class="id" title="var">nat_mod_exp</span> (<span class="id" title="var">y_2</span>) (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE32</span> 2) =.? ((<span class="id" title="var">nat_mod_exp</span> (<span class="id" title="var">x_1</span>) (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE32</span> 3)) +% (<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">nat_mod_from_literal</span> (<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">elem_max</span>) (<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE128</span> 7) : <span class="id" title="var">secp256k1_field_element_t</span>))).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">generator</span>  : <span class="id" title="var">affine_t</span> :=<br/>
+&nbsp;&nbsp;(<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">nat_mod_from_byte_seq_be</span> ([<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 121) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 190) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 102) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 126) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 249) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 220) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 187) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 172) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 85) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 160) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 98) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 149) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 206) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 135) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 11) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 7) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 2) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 155) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 252) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 219) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 45) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 206) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 40) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 217) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 89) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 242) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 129) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 91) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 22) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 248) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 23) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 152) : <span class="id" title="var">int8</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;]) : <span class="id" title="var">secp256k1_field_element_t</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">nat_mod_from_byte_seq_be</span> ([<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 72) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 58) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 218) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 119) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 38) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 163) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 196) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 101) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 93) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 164) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 251) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 252) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 14) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 17) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 8) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 168) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 253) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 23) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 180) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 72) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 166) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 133) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 84) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 25) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 156) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 71) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 208) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 143) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 251) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 16) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 212) : <span class="id" title="var">int8</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secret</span> (@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE8</span> 184) : <span class="id" title="var">int8</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;]) : <span class="id" title="var">secp256k1_field_element_t</span><br/>
+&nbsp;&nbsp;).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">neg_point</span> (<span class="id" title="var">p_4</span> : <span class="id" title="var">affine_t</span>) : <span class="id" title="var">affine_t</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> '(<span class="id" title="var">x_5</span>, <span class="id" title="var">y_6</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">p_4</span> <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;(<span class="id" title="var">x_5</span>, <span class="id" title="var">nat_mod_neg</span> (<span class="id" title="var">y_6</span>)).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">add_different_points</span><br/>
+&nbsp;&nbsp;(<span class="id" title="var">p_11</span> : <span class="id" title="var">affine_t</span>)<br/>
+&nbsp;&nbsp;(<span class="id" title="var">q_12</span> : <span class="id" title="var">affine_t</span>)<br/>
+&nbsp;&nbsp;: <span class="id" title="var">affine_t</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> '(<span class="id" title="var">px_13</span>, <span class="id" title="var">py_14</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">p_11</span> <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> '(<span class="id" title="var">qx_15</span>, <span class="id" title="var">qy_16</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">q_12</span> <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">s_17</span> : <span class="id" title="var">secp256k1_field_element_t</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;((<span class="id" title="var">qy_16</span>) -% (<span class="id" title="var">py_14</span>)) *% (<span class="id" title="var">nat_mod_inv</span> ((<span class="id" title="var">qx_15</span>) -% (<span class="id" title="var">px_13</span>))) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">s2_18</span> : <span class="id" title="var">secp256k1_field_element_t</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">s_17</span>) *% (<span class="id" title="var">s_17</span>) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">x3_19</span> : <span class="id" title="var">secp256k1_field_element_t</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;((<span class="id" title="var">s2_18</span>) -% (<span class="id" title="var">px_13</span>)) -% (<span class="id" title="var">qx_15</span>) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">y3_20</span> : <span class="id" title="var">secp256k1_field_element_t</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;((<span class="id" title="var">s_17</span>) *% ((<span class="id" title="var">px_13</span>) -% (<span class="id" title="var">x3_19</span>))) -% (<span class="id" title="var">py_14</span>) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;(<span class="id" title="var">x3_19</span>, <span class="id" title="var">y3_20</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">double_point</span> (<span class="id" title="var">p_21</span> : <span class="id" title="var">affine_t</span>) : <span class="id" title="var">affine_t</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">result_22</span> : (<span class="id" title="var">secp256k1_field_element_t</span> × <span class="id" title="var">secp256k1_field_element_t</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">infinity</span>  <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">neg_p_23</span> : (<span class="id" title="var">secp256k1_field_element_t</span> × <span class="id" title="var">secp256k1_field_element_t</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">neg_point</span> (<span class="id" title="var">p_21</span>) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> '(<span class="id" title="var">result_22</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> (<span class="id" title="var">p_21</span>) =.? (<span class="id" title="var">neg_p_23</span>):<span class="id" title="var">bool</span> <span class="id" title="keyword">then</span> (<span class="id" title="keyword">let</span> <span class="id" title="var">result_22</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">infinity</span>  <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">result_22</span>)) <span class="id" title="keyword">else</span> (<span class="id" title="keyword">let</span> '(<span class="id" title="var">x_24</span>, <span class="id" title="var">y_25</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">p_21</span> <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">t_26</span> : <span class="id" title="var">secp256k1_field_element_t</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(((<span class="id" title="var">nat_mod_from_literal</span> (<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">elem_max</span>) (<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE128</span> 3) : <span class="id" title="var">secp256k1_field_element_t</span>) *% (<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">x_24</span>)) *% (<span class="id" title="var">x_24</span>)) *% (<span class="id" title="var">nat_mod_inv</span> ((<span class="id" title="var">nat_mod_from_literal</span> (<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">elem_max</span>) (<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;@<span class="id" title="var">repr</span> <span class="id" title="var">WORDSIZE128</span> 2) : <span class="id" title="var">secp256k1_field_element_t</span>) *% (<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">y_25</span>))) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">t2_27</span> : <span class="id" title="var">secp256k1_field_element_t</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">t_26</span>) *% (<span class="id" title="var">t_26</span>) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">x3_28</span> : <span class="id" title="var">secp256k1_field_element_t</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">t2_27</span>) -% ((<span class="id" title="var">nat_mod_two</span> ) *% (<span class="id" title="var">x_24</span>)) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">y3_29</span> : <span class="id" title="var">secp256k1_field_element_t</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;((<span class="id" title="var">t_26</span>) *% ((<span class="id" title="var">x_24</span>) -% (<span class="id" title="var">x3_28</span>))) -% (<span class="id" title="var">y_25</span>) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">result_22</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">x3_28</span>, <span class="id" title="var">y3_29</span>) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">result_22</span>)) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="var">result_22</span>.<br/>
+
+<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Definition</span> <span class="id" title="var">add_points</span> (<span class="id" title="var">p_7</span> : <span class="id" title="var">affine_t</span>) (<span class="id" title="var">q_8</span> : <span class="id" title="var">affine_t</span>) : <span class="id" title="var">affine_t</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">result_9</span> : (<span class="id" title="var">secp256k1_field_element_t</span> × <span class="id" title="var">secp256k1_field_element_t</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">infinity</span>  <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> '(<span class="id" title="var">result_9</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <span class="id" title="var">is_infinity</span> (<span class="id" title="var">p_7</span>):<span class="id" title="var">bool</span> <span class="id" title="keyword">then</span> (<span class="id" title="keyword">let</span> <span class="id" title="var">result_9</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">q_8</span> <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">result_9</span>)) <span class="id" title="keyword">else</span> (<span class="id" title="keyword">let</span> '(<span class="id" title="var">result_9</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <span class="id" title="var">is_infinity</span> (<span class="id" title="var">q_8</span>):<span class="id" title="var">bool</span> <span class="id" title="keyword">then</span> (<span class="id" title="keyword">let</span> <span class="id" title="var">result_9</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">p_7</span> <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">result_9</span>)) <span class="id" title="keyword">else</span> (<span class="id" title="keyword">let</span> '(<span class="id" title="var">result_9</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> (<span class="id" title="var">p_7</span>) =.? (<span class="id" title="var">q_8</span>):<span class="id" title="var">bool</span> <span class="id" title="keyword">then</span> (<span class="id" title="keyword">let</span> <span class="id" title="var">result_9</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">double_point</span> (<span class="id" title="var">p_7</span>) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">result_9</span>)) <span class="id" title="keyword">else</span> (<span class="id" title="keyword">let</span> <span class="id" title="var">neg_q_10</span> : (<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secp256k1_field_element_t</span> ×<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">secp256k1_field_element_t</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">neg_point</span> (<span class="id" title="var">q_8</span>) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> '(<span class="id" title="var">result_9</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> (<span class="id" title="var">p_7</span>) =.? (<span class="id" title="var">neg_q_10</span>):<span class="id" title="var">bool</span> <span class="id" title="keyword">then</span> (<span class="id" title="keyword">let</span> <span class="id" title="var">result_9</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">infinity</span>  <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">result_9</span>)) <span class="id" title="keyword">else</span> (<span class="id" title="keyword">let</span> <span class="id" title="var">result_9</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">add_different_points</span> (<span class="id" title="var">p_7</span>) (<span class="id" title="var">q_8</span>) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">result_9</span>)) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">result_9</span>)) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">result_9</span>)) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">result_9</span>)) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">result_9</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">scalar_multiplication</span><br/>
+&nbsp;&nbsp;(<span class="id" title="var">k_30</span> : <span class="id" title="var">secp256k1_scalar_t</span>)<br/>
+&nbsp;&nbsp;(<span class="id" title="var">p_31</span> : <span class="id" title="var">affine_t</span>)<br/>
+&nbsp;&nbsp;: <span class="id" title="var">affine_t</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">q_32</span> : (<span class="id" title="var">secp256k1_field_element_t</span> × <span class="id" title="var">secp256k1_field_element_t</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">infinity</span>  <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">q_32</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">foldi</span> (<span class="id" title="var">usize</span> 0) (<span class="id" title="var">scalar_bits_v</span>) (<span class="id" title="keyword">fun</span> <span class="id" title="var">i_33</span> <span class="id" title="var">q_32</span> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">q_32</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">double_point</span> (<span class="id" title="var">q_32</span>) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> '(<span class="id" title="var">q_32</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <span class="id" title="var">nat_mod_bit</span> (<span class="id" title="var">k_30</span>) (((<span class="id" title="var">scalar_bits_v</span>) - (<span class="id" title="var">usize</span> 1)) - (<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">i_33</span>)):<span class="id" title="var">bool</span> <span class="id" title="keyword">then</span> (<span class="id" title="keyword">let</span> <span class="id" title="var">q_32</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">add_points</span> (<span class="id" title="var">p_31</span>) (<span class="id" title="var">q_32</span>) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">q_32</span>)) <span class="id" title="keyword">else</span> ((<span class="id" title="var">q_32</span>)) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">q_32</span>))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">q_32</span> <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="var">q_32</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">batch_scalar_optimization</span><br/>
+&nbsp;&nbsp;(<span class="id" title="var">elems_34</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">affine_t</span>))<br/>
+&nbsp;&nbsp;: <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">affine_t</span>) :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">new_elems_35</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">affine_t</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">elems_34</span> <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> '(<span class="id" title="var">new_elems_35</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> (<span class="id" title="var">seq_len</span> (<span class="id" title="var">new_elems_35</span>)) =.? (<span class="id" title="var">usize</span> 0):<span class="id" title="var">bool</span> <span class="id" title="keyword">then</span> (<span class="id" title="keyword">let</span> <span class="id" title="var">new_elems_35</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">new_elems_35</span> <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">new_elems_35</span>)) <span class="id" title="keyword">else</span> (<span class="id" title="keyword">let</span> <span class="id" title="var">new_elems_35</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">foldi</span> (<span class="id" title="var">usize</span> 0) ((<span class="id" title="var">seq_len</span> (<span class="id" title="var">new_elems_35</span>)) - (<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">usize</span> 1)) (<span class="id" title="keyword">fun</span> <span class="id" title="var">i_36</span> <span class="id" title="var">new_elems_35</span> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> '(<span class="id" title="var">ai_37</span>, <span class="id" title="var">pi_38</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">seq_index</span> (<span class="id" title="var">new_elems_35</span>) (<span class="id" title="var">i_36</span>) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> '(<span class="id" title="var">aiplus1_39</span>, <span class="id" title="var">piplus1_40</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">seq_index</span> (<span class="id" title="var">new_elems_35</span>) ((<span class="id" title="var">i_36</span>) + (<span class="id" title="var">usize</span> 1)) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">new_elems_35</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">seq_upd</span> <span class="id" title="var">new_elems_35</span> (<span class="id" title="var">i_36</span>) (((<span class="id" title="var">ai_37</span>) -% (<span class="id" title="var">aiplus1_39</span>), <span class="id" title="var">pi_38</span>)) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">new_elems_35</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">seq_upd</span> <span class="id" title="var">new_elems_35</span> ((<span class="id" title="var">i_36</span>) + (<span class="id" title="var">usize</span> 1)) ((<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">aiplus1_39</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">add_points</span> (<span class="id" title="var">pi_38</span>) (<span class="id" title="var">piplus1_40</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">new_elems_35</span>))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">new_elems_35</span> <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">new_elems_35</span>)) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="var">new_elems_35</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">product_sum</span><br/>
+&nbsp;&nbsp;(<span class="id" title="var">elems_41</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">affine_t</span>))<br/>
+&nbsp;&nbsp;: <span class="id" title="var">affine_t</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">res_42</span> : (<span class="id" title="var">secp256k1_field_element_t</span> × <span class="id" title="var">secp256k1_field_element_t</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">infinity</span>  <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">res_42</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">foldi</span> (<span class="id" title="var">usize</span> 0) (<span class="id" title="var">seq_len</span> (<span class="id" title="var">elems_41</span>)) (<span class="id" title="keyword">fun</span> <span class="id" title="var">i_43</span> <span class="id" title="var">res_42</span> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> '(<span class="id" title="var">ai_44</span>, <span class="id" title="var">pi_45</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">seq_index</span> (<span class="id" title="var">elems_41</span>) (<span class="id" title="var">i_43</span>) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">res_42</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">add_points</span> (<span class="id" title="var">res_42</span>) (<span class="id" title="var">scalar_multiplication</span> (<span class="id" title="var">ai_44</span>) (<span class="id" title="var">pi_45</span>)) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">res_42</span>))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">res_42</span> <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="var">res_42</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">batch_scalar_multiplication</span><br/>
+&nbsp;&nbsp;(<span class="id" title="var">elems_46</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">affine_t</span>))<br/>
+&nbsp;&nbsp;: <span class="id" title="var">affine_t</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">optimized_47</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">affine_t</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">batch_scalar_optimization</span> (<span class="id" title="var">elems_46</span>) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="var">product_sum</span> (<span class="id" title="var">optimized_47</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">zero_less_than_elem_max</span>: 0 &lt; <span class="id" title="var">elem_max</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">zero_less_than_scalar_max</span>: 0 &lt; <span class="id" title="var">scalar_max</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Notation</span> &quot;p '+'' q" := (<span class="id" title="var">add_points</span> <span class="id" title="var">p</span> <span class="id" title="var">q</span>) (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 5, <span class="id" title="tactic">left</span> <span class="id" title="keyword">associativity</span>).<br/>
+<span class="id" title="keyword">Notation</span> &quot;k '*'' p" := (<span class="id" title="var">scalar_multiplication</span> <span class="id" title="var">k</span> <span class="id" title="var">p</span>) (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 4, <span class="id" title="tactic">right</span> <span class="id" title="keyword">associativity</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Section</span> <span class="id" title="var">nat_mod</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Variable</span> <span class="id" title="var">max</span>: <span class="id" title="var">Z</span>.<br/>
+<span class="id" title="keyword">Variable</span> <span class="id" title="var">max_prime</span>: <span class="id" title="var">prime</span> <span class="id" title="var">max</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">nat_mod_eq</span> (<span class="id" title="var">a</span> <span class="id" title="var">b</span> : <span class="id" title="var">nat_mod</span> <span class="id" title="var">max</span>) := <span class="id" title="var">a</span> = <span class="id" title="var">b</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Add</span> <span class="id" title="var">Field</span> <span class="id" title="var">FZpZ</span> : (<span class="id" title="var">GZnZ.FZpZ</span> <span class="id" title="var">max</span> <span class="id" title="var">max_prime</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Theorem</span> <span class="id" title="var">max_pos</span>: 0 &lt; <span class="id" title="var">max</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">nat_mod_FZpZ</span>: <span class="id" title="var">field_theory</span> <span class="id" title="var">nat_mod_zero</span> <span class="id" title="var">nat_mod_one</span> <span class="id" title="var">nat_mod_add</span> <span class="id" title="var">nat_mod_mul</span> <span class="id" title="var">nat_mod_sub</span> <span class="id" title="var">nat_mod_neg</span> <span class="id" title="var">nat_mod_div</span> <span class="id" title="var">nat_mod_inv</span> (@<span class="id" title="var">Logic.eq</span> (<span class="id" title="var">nat_mod</span> <span class="id" title="var">max</span>)).<br/>
+
+<br/>
+<span class="id" title="keyword">Add</span> <span class="id" title="var">Field</span> <span class="id" title="var">nat_mod_FZpZ</span> : <span class="id" title="var">nat_mod_FZpZ</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">nat_mod_small</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">n</span> : <span class="id" title="var">nat_mod</span> <span class="id" title="var">max</span>), 0 ≤ <span class="id" title="var">n</span> &lt; <span class="id" title="var">max</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">small_to_nat_mod</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">a</span> : <span class="id" title="var">Z</span>), 0 ≤ <span class="id" title="var">a</span> &lt; <span class="id" title="var">max</span> → <span class="id" title="tactic">∃</span> (<span class="id" title="var">b</span> : <span class="id" title="var">nat_mod</span> <span class="id" title="var">max</span>), <span class="id" title="var">a</span> =? <span class="id" title="var">b</span> = <span class="id" title="var">true</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">nat_mod_double_neg</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">x</span> : <span class="id" title="var">nat_mod</span> <span class="id" title="var">max</span>), <span class="id" title="var">nat_mod_neg</span> (<span class="id" title="var">nat_mod_neg</span> <span class="id" title="var">x</span>) = <span class="id" title="var">x</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">nat_mod_neg_inj</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">n</span> <span class="id" title="var">m</span> : <span class="id" title="var">nat_mod</span> <span class="id" title="var">max</span>), <span class="id" title="var">nat_mod_neg</span> <span class="id" title="var">n</span> = <span class="id" title="var">nat_mod_neg</span> <span class="id" title="var">m</span> → <span class="id" title="var">n</span> = <span class="id" title="var">m</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">nat_mod_neg_both</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">n</span> <span class="id" title="var">m</span> : <span class="id" title="var">nat_mod</span> <span class="id" title="var">max</span>), <span class="id" title="var">n</span> = <span class="id" title="var">m</span> ↔ <span class="id" title="var">nat_mod_neg</span> <span class="id" title="var">n</span> = <span class="id" title="var">nat_mod_neg</span> <span class="id" title="var">m</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">nat_mod_neg_symm</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">x</span> <span class="id" title="var">y</span> : <span class="id" title="var">nat_mod</span> <span class="id" title="var">max</span>), <span class="id" title="var">nat_mod_neg</span> <span class="id" title="var">x</span> = <span class="id" title="var">y</span> ↔ <span class="id" title="var">x</span> = <span class="id" title="var">nat_mod_neg</span> <span class="id" title="var">y</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">one_minus_mod2</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">x</span> : <span class="id" title="var">Z</span>), <span class="id" title="var">x</span> <span class="id" title="var">mod</span> 2 ≠ (1 - <span class="id" title="var">x</span> <span class="id" title="var">mod</span> 2) <span class="id" title="var">mod</span> 2.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">nat_mod_neg_not_zero</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">x</span> : <span class="id" title="var">nat_mod</span> <span class="id" title="var">max</span>), (<span class="id" title="var">max</span> <span class="id" title="var">mod</span> 2 = 1) → (<span class="id" title="var">x</span> =? <span class="id" title="var">nat_mod_neg</span> <span class="id" title="var">x</span>) = (<span class="id" title="var">x</span> =? 0).<br/>
+ 
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">mod_diff_helper</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">a</span> <span class="id" title="var">b</span> : <span class="id" title="var">nat_mod</span> <span class="id" title="var">max</span>), (<span class="id" title="var">a</span> - <span class="id" title="var">b</span> ≠ 0) → (<span class="id" title="var">a</span> - <span class="id" title="var">b</span>) <span class="id" title="var">mod</span> <span class="id" title="var">max</span> ≠ 0.<br/>
+ 
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">nat_mod_neq_diff</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">a</span> <span class="id" title="var">b</span> : <span class="id" title="var">nat_mod</span> <span class="id" title="var">max</span>), (<span class="id" title="var">a</span> ≠ <span class="id" title="var">b</span>) → (<span class="id" title="var">a</span> -% <span class="id" title="var">b</span> ≠ <span class="id" title="var">nat_mod_zero</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">flip_division</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">a</span> <span class="id" title="var">b</span> <span class="id" title="var">c</span> <span class="id" title="var">d</span> : <span class="id" title="var">nat_mod</span> <span class="id" title="var">max</span>), (<span class="id" title="var">c</span> ≠ <span class="id" title="var">d</span>) → (<span class="id" title="var">a</span> -% <span class="id" title="var">b</span>) *% <span class="id" title="var">nat_mod_inv</span> (<span class="id" title="var">c</span> -% <span class="id" title="var">d</span>) = (<span class="id" title="var">b</span> -% <span class="id" title="var">a</span>) *% <span class="id" title="var">nat_mod_inv</span> (<span class="id" title="var">d</span> -% <span class="id" title="var">c</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">Zpos_helper0</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">n</span> : <span class="id" title="var">nat_mod</span> <span class="id" title="var">max</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">positive</span>), <span class="id" title="var">val</span> <span class="id" title="var">_</span> <span class="id" title="var">n</span> = <span class="id" title="var">Z.pos</span> <span class="id" title="var">p</span>~0 → <span class="id" title="var">Z.pos</span> <span class="id" title="var">p</span> = <span class="id" title="var">Z.pos</span> <span class="id" title="var">p</span> <span class="id" title="var">mod</span> <span class="id" title="var">max</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">Zpos_helper1</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">n</span> : <span class="id" title="var">nat_mod</span> <span class="id" title="var">max</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">positive</span>), <span class="id" title="var">val</span> <span class="id" title="var">_</span> <span class="id" title="var">n</span> = <span class="id" title="var">Z.pos</span> <span class="id" title="var">p</span>~1 → <span class="id" title="var">Z.pos</span> <span class="id" title="var">p</span> = <span class="id" title="var">Z.pos</span> <span class="id" title="var">p</span> <span class="id" title="var">mod</span> <span class="id" title="var">max</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">znz_duplicate</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">a</span> : <span class="id" title="var">nat_mod</span> <span class="id" title="var">max</span>) (<span class="id" title="var">b</span> : <span class="id" title="var">Z</span>) (<span class="id" title="var">H</span> : <span class="id" title="var">val</span> <span class="id" title="var">_</span> <span class="id" title="var">a</span> = <span class="id" title="var">b</span>), <span class="id" title="tactic">∃</span> <span class="id" title="var">H2</span>, <span class="id" title="var">a</span> = <span class="id" title="var">mkznz</span> <span class="id" title="var">_</span> <span class="id" title="var">b</span> <span class="id" title="var">H2</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">End</span> <span class="id" title="var">nat_mod</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Section</span> <span class="id" title="var">uint_size</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">End</span> <span class="id" title="var">uint_size</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Section</span> <span class="id" title="var">foldi</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">foldi_empty</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">A</span> : <span class="id" title="keyword">Type</span>) (<span class="id" title="var">a</span> <span class="id" title="var">b</span> : <span class="id" title="var">uint_size</span>) (<span class="id" title="var">f</span> : <span class="id" title="var">uint_size</span> → <span class="id" title="var">A</span> → <span class="id" title="var">A</span>) (<span class="id" title="var">acc</span> : <span class="id" title="var">A</span>), (<span class="id" title="var">unsigned</span> <span class="id" title="var">a</span> &gt; <span class="id" title="var">unsigned</span> <span class="id" title="var">b</span>) → <span class="id" title="var">foldi</span> <span class="id" title="var">a</span> <span class="id" title="var">b</span> <span class="id" title="var">f</span> <span class="id" title="var">acc</span> = <span class="id" title="var">acc</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">foldi_equiv</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">A</span> : <span class="id" title="keyword">Type</span>) (<span class="id" title="var">a</span> <span class="id" title="var">b</span> : <span class="id" title="var">uint_size</span>) (<span class="id" title="var">f</span> <span class="id" title="var">g</span> : <span class="id" title="var">uint_size</span> → <span class="id" title="var">A</span> → <span class="id" title="var">A</span>) (<span class="id" title="var">acc</span> : <span class="id" title="var">A</span>),<br/>
+&nbsp;&nbsp;(<span class="id" title="keyword">∀</span> (<span class="id" title="var">i0</span> : <span class="id" title="var">uint_size</span>) <span class="id" title="var">acc0</span>, (<span class="id" title="var">unsigned</span> <span class="id" title="var">a</span> ≤ <span class="id" title="var">unsigned</span> <span class="id" title="var">i0</span> &lt; <span class="id" title="var">unsigned</span> <span class="id" title="var">b</span>) → <span class="id" title="var">f</span> <span class="id" title="var">i0</span> <span class="id" title="var">acc0</span> = <span class="id" title="var">g</span> <span class="id" title="var">i0</span> <span class="id" title="var">acc0</span>) →<br/>
+&nbsp;&nbsp;<span class="id" title="var">foldi</span> <span class="id" title="var">a</span> <span class="id" title="var">b</span> <span class="id" title="var">f</span> <span class="id" title="var">acc</span> = <span class="id" title="var">foldi</span> <span class="id" title="var">a</span> <span class="id" title="var">b</span> <span class="id" title="var">g</span> <span class="id" title="var">acc</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">foldi_offset</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">A</span> : <span class="id" title="keyword">Type</span>) (<span class="id" title="var">n</span> : <span class="id" title="var">nat</span>) <span class="id" title="var">i</span> <span class="id" title="var">j</span> (<span class="id" title="var">f</span> <span class="id" title="var">g</span> : <span class="id" title="var">uint_size</span> → <span class="id" title="var">A</span> → <span class="id" title="var">A</span>) <span class="id" title="var">acc</span>,<br/>
+&nbsp;&nbsp;0 ≤ <span class="id" title="var">Z.of_nat</span> <span class="id" title="var">n</span> + <span class="id" title="var">unsigned</span> <span class="id" title="var">i</span> ≤ @<span class="id" title="var">max_unsigned</span> <span class="id" title="var">WORDSIZE32</span> →<br/>
+&nbsp;&nbsp;0 ≤ <span class="id" title="var">Z.of_nat</span> <span class="id" title="var">n</span> + <span class="id" title="var">unsigned</span> <span class="id" title="var">j</span> ≤ @<span class="id" title="var">max_unsigned</span> <span class="id" title="var">WORDSIZE32</span> →<br/>
+&nbsp;&nbsp;(<span class="id" title="keyword">∀</span> <span class="id" title="var">i0</span> <span class="id" title="var">acc0</span>, 0 ≤ <span class="id" title="var">i0</span> ≤ <span class="id" title="var">n</span> → <span class="id" title="var">f</span> ((<span class="id" title="var">repr</span> <span class="id" title="var">i0</span>) .+ <span class="id" title="var">i</span>) <span class="id" title="var">acc0</span> = <span class="id" title="var">g</span> ((<span class="id" title="var">repr</span> <span class="id" title="var">i0</span>) .+ <span class="id" title="var">j</span>) <span class="id" title="var">acc0</span>) →<br/>
+&nbsp;&nbsp;<span class="id" title="var">foldi_</span> <span class="id" title="var">n</span> <span class="id" title="var">i</span> <span class="id" title="var">f</span> <span class="id" title="var">acc</span> = <span class="id" title="var">foldi_</span> <span class="id" title="var">n</span> <span class="id" title="var">j</span> <span class="id" title="var">g</span> <span class="id" title="var">acc</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">foldi_step</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">accT</span> : <span class="id" title="keyword">Type</span>) (<span class="id" title="var">n</span> : <span class="id" title="var">nat</span>) (<span class="id" title="var">i</span> : <span class="id" title="var">Z</span>) (<span class="id" title="var">f</span> : <span class="id" title="var">uint_size</span> → <span class="id" title="var">accT</span> → <span class="id" title="var">accT</span>) (<span class="id" title="var">acc</span> : <span class="id" title="var">accT</span>), 0 ≤ <span class="id" title="var">i</span> ≤ @<span class="id" title="var">max_unsigned</span> <span class="id" title="var">WORDSIZE32</span> → <span class="id" title="var">foldi_</span> (<span class="id" title="var">S</span> <span class="id" title="var">n</span>) (<span class="id" title="var">repr</span> <span class="id" title="var">i</span>) <span class="id" title="var">f</span> <span class="id" title="var">acc</span> = <span class="id" title="var">foldi_</span> <span class="id" title="var">n</span> (<span class="id" title="var">repr</span> (<span class="id" title="var">i</span> +1)) <span class="id" title="var">f</span> (<span class="id" title="var">f</span> (<span class="id" title="var">repr</span> <span class="id" title="var">i</span>) <span class="id" title="var">acc</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">foldi_step2</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">A</span> : <span class="id" title="keyword">Type</span>) (<span class="id" title="var">a</span> <span class="id" title="var">b</span> : <span class="id" title="var">uint_size</span>) (<span class="id" title="var">f</span> : <span class="id" title="var">uint_size</span> → <span class="id" title="var">A</span> → <span class="id" title="var">A</span>) (<span class="id" title="var">acc</span> : <span class="id" title="var">A</span>),<br/>
+&nbsp;&nbsp;(<span class="id" title="var">unsigned</span> <span class="id" title="var">a</span> &lt; <span class="id" title="var">unsigned</span> <span class="id" title="var">b</span>) →<br/>
+&nbsp;&nbsp;<span class="id" title="var">foldi</span> <span class="id" title="var">a</span> <span class="id" title="var">b</span> <span class="id" title="var">f</span> <span class="id" title="var">acc</span> = <span class="id" title="var">foldi</span> (<span class="id" title="var">a</span> .+ <span class="id" title="var">MachineIntegers.one</span>) <span class="id" title="var">b</span> <span class="id" title="var">f</span> (<span class="id" title="var">f</span> <span class="id" title="var">a</span> <span class="id" title="var">acc</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">foldi_split</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">A</span> : <span class="id" title="keyword">Type</span>) (<span class="id" title="var">a</span> <span class="id" title="var">b</span> <span class="id" title="var">c</span> : <span class="id" title="var">uint_size</span>) (<span class="id" title="var">f</span> : <span class="id" title="var">uint_size</span> → <span class="id" title="var">A</span> → <span class="id" title="var">A</span>) (<span class="id" title="var">acc</span> : <span class="id" title="var">A</span>),<br/>
+&nbsp;&nbsp;(<span class="id" title="var">unsigned</span> <span class="id" title="var">a</span> ≤ <span class="id" title="var">unsigned</span> <span class="id" title="var">b</span> &lt; <span class="id" title="var">unsigned</span> <span class="id" title="var">c</span>) →<br/>
+&nbsp;&nbsp;<span class="id" title="var">foldi</span> <span class="id" title="var">a</span> <span class="id" title="var">c</span> <span class="id" title="var">f</span> <span class="id" title="var">acc</span> = <span class="id" title="var">foldi</span> <span class="id" title="var">b</span> <span class="id" title="var">c</span> <span class="id" title="var">f</span> (<span class="id" title="var">foldi</span> <span class="id" title="var">a</span> <span class="id" title="var">b</span> <span class="id" title="var">f</span> <span class="id" title="var">acc</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">foldi_simple_invariant</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">A</span> : <span class="id" title="keyword">Type</span>) (<span class="id" title="var">a</span> <span class="id" title="var">b</span> : <span class="id" title="var">uint_size</span>) (<span class="id" title="var">f</span> : <span class="id" title="var">uint_size</span> → <span class="id" title="var">A</span> → <span class="id" title="var">A</span>) (<span class="id" title="var">acc</span> : <span class="id" title="var">A</span>) (<span class="id" title="var">P</span> : <span class="id" title="var">A</span> → <span class="id" title="keyword">Prop</span>),<br/>
+&nbsp;&nbsp;<span class="id" title="var">P</span> <span class="id" title="var">acc</span> →<br/>
+&nbsp;&nbsp;(<span class="id" title="keyword">∀</span> <span class="id" title="var">i0</span> <span class="id" title="var">acc0</span>, <span class="id" title="var">unsigned</span> <span class="id" title="var">a</span> ≤ <span class="id" title="var">unsigned</span> <span class="id" title="var">i0</span> &lt; <span class="id" title="var">unsigned</span> <span class="id" title="var">b</span> → <span class="id" title="var">P</span> <span class="id" title="var">acc0</span> → <span class="id" title="var">P</span> (<span class="id" title="var">f</span> <span class="id" title="var">i0</span> <span class="id" title="var">acc0</span>)) →<br/>
+&nbsp;&nbsp;<span class="id" title="var">P</span> (<span class="id" title="var">foldi</span> <span class="id" title="var">a</span> <span class="id" title="var">b</span> <span class="id" title="var">f</span> <span class="id" title="var">acc</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">End</span> <span class="id" title="var">foldi</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Axiom</span> <span class="id" title="var">elem_max_prime</span>: <span class="id" title="var">prime</span> <span class="id" title="var">elem_max</span>.<br/>
+<span class="id" title="keyword">Axiom</span> <span class="id" title="var">scalar_max_prime</span>: <span class="id" title="var">prime</span> <span class="id" title="var">scalar_max</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">field_elem_FZpZ</span> := (<span class="id" title="var">nat_mod_FZpZ</span> <span class="id" title="var">elem_max</span> <span class="id" title="var">elem_max_prime</span>).<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">scalar_FZpZ</span> := (<span class="id" title="var">nat_mod_FZpZ</span> <span class="id" title="var">scalar_max</span> <span class="id" title="var">scalar_max_prime</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Add</span> <span class="id" title="var">Field</span> <span class="id" title="var">field_elem_FZpZ</span> : <span class="id" title="var">field_elem_FZpZ</span>.<br/>
+<span class="id" title="keyword">Add</span> <span class="id" title="var">Field</span> <span class="id" title="var">scalar_FZpZ</span> : <span class="id" title="var">scalar_FZpZ</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">field_elem_small</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">n</span> : <span class="id" title="var">secp256k1_field_element_t</span>), 0 ≤ <span class="id" title="var">n</span> &lt; <span class="id" title="var">elem_max</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">scalar_small</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">n</span> : <span class="id" title="var">secp256k1_scalar_t</span>), 0 ≤ <span class="id" title="var">n</span> &lt; <span class="id" title="var">scalar_max</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">curve_eq_symm</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> <span class="id" title="var">q</span> : <span class="id" title="var">affine_t</span>),<br/>
+&nbsp;&nbsp;<span class="id" title="var">p</span> =.? <span class="id" title="var">q</span> = <span class="id" title="var">q</span> =.? <span class="id" title="var">p</span>.<br/>
+  
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">curve_eq_reflect</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> : <span class="id" title="var">affine_t</span>), <span class="id" title="var">p</span> =.? <span class="id" title="var">p</span> = <span class="id" title="var">true</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">curve_eq_red</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> <span class="id" title="var">q</span> : <span class="id" title="var">affine_t</span>), <span class="id" title="var">p</span> =.? <span class="id" title="var">q</span> = (<span class="id" title="var">fst</span> <span class="id" title="var">p</span> =? <span class="id" title="var">fst</span> <span class="id" title="var">q</span>) &amp;&amp; (<span class="id" title="var">snd</span> <span class="id" title="var">p</span> =? <span class="id" title="var">snd</span> <span class="id" title="var">q</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">infty_is_infty</span>: <span class="id" title="var">is_infinity</span> <span class="id" title="var">infinity</span> = <span class="id" title="var">true</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">is_infty_means_infty</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span>: <span class="id" title="var">affine_t</span>), <span class="id" title="var">is_infinity</span> <span class="id" title="var">p</span> = <span class="id" title="var">true</span> → <span class="id" title="var">p</span> = <span class="id" title="var">infinity</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">pos_diff</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">a</span> <span class="id" title="var">b</span>, <span class="id" title="var">a</span> &lt; <span class="id" title="var">b</span> → <span class="id" title="var">b</span> - <span class="id" title="var">a</span> &gt; 0.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">double_neg</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> : <span class="id" title="var">affine_t</span>), <span class="id" title="var">p</span> = <span class="id" title="var">neg_point</span> (<span class="id" title="var">neg_point</span> <span class="id" title="var">p</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">neg_both</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> <span class="id" title="var">q</span> : <span class="id" title="var">affine_t</span>), <span class="id" title="var">p</span> = <span class="id" title="var">q</span> ↔ <span class="id" title="var">neg_point</span> <span class="id" title="var">p</span> = <span class="id" title="var">neg_point</span> <span class="id" title="var">q</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">neg_symm</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> <span class="id" title="var">q</span> : <span class="id" title="var">affine_t</span>), <span class="id" title="var">neg_point</span> <span class="id" title="var">p</span> = <span class="id" title="var">q</span> ↔ <span class="id" title="var">p</span> = <span class="id" title="var">neg_point</span> <span class="id" title="var">q</span>.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">Search</span> (?<span class="id" title="var">a</span> → ?<span class="id" title="var">b</span> → ?<span class="id" title="var">a</span> ∧ ?<span class="id" title="var">b</span>).<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">neg_symm_bool</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> <span class="id" title="var">q</span> : <span class="id" title="var">affine_t</span>), <span class="id" title="var">neg_point</span> <span class="id" title="var">p</span> =.? <span class="id" title="var">q</span> = <span class="id" title="var">p</span> =.? <span class="id" title="var">neg_point</span>(<span class="id" title="var">q</span>).<br/>
+   
+<br/>
+<span class="id" title="keyword">Structure</span> <span class="id" title="var">on_curve_t</span>: <span class="id" title="keyword">Set</span>:=<br/>
+&nbsp;<span class="id" title="var">mkoncurve</span> {<span class="id" title="var">point</span>: <span class="id" title="var">affine_t</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">on_curve</span>: <span class="id" title="var">is_point_on_curve</span> <span class="id" title="var">point</span> = <span class="id" title="var">true</span> }.<br/>
+
+<br/>
+<span class="id" title="keyword">Coercion</span> <span class="id" title="var">point</span> : <span class="id" title="var">on_curve_t</span> &gt;-&gt; <span class="id" title="var">prod</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">infty_on_curve</span>: <span class="id" title="var">is_point_on_curve</span> <span class="id" title="var">infinity</span> = <span class="id" title="var">true</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">generator_on_curve</span>: <span class="id" title="var">is_point_on_curve</span> <span class="id" title="var">generator</span> = <span class="id" title="var">true</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">same_x_cases</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> <span class="id" title="var">q</span> : <span class="id" title="var">on_curve_t</span>), (<span class="id" title="var">fst</span> <span class="id" title="var">p</span> = <span class="id" title="var">fst</span> <span class="id" title="var">q</span>) → <span class="id" title="var">point</span> <span class="id" title="var">p</span> = <span class="id" title="var">point</span> <span class="id" title="var">q</span> ∨ <span class="id" title="var">point</span> <span class="id" title="var">p</span> = <span class="id" title="var">neg_point</span> (<span class="id" title="var">q</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">add_infty_1</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span>: <span class="id" title="var">affine_t</span>), <span class="id" title="var">infinity</span> +' <span class="id" title="var">p</span> = <span class="id" title="var">p</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">double_point_preserves_infinity</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> : <span class="id" title="var">affine_t</span>), <span class="id" title="var">is_infinity</span> <span class="id" title="var">p</span> = <span class="id" title="var">is_infinity</span> (<span class="id" title="var">double_point</span> <span class="id" title="var">p</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">add_different_comm</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> <span class="id" title="var">q</span> : <span class="id" title="var">affine_t</span>), (<span class="id" title="var">fst</span> <span class="id" title="var">p</span> ≠ <span class="id" title="var">fst</span> <span class="id" title="var">q</span>) → <span class="id" title="var">add_different_points</span> <span class="id" title="var">p</span> <span class="id" title="var">q</span> = <span class="id" title="var">add_different_points</span> <span class="id" title="var">q</span> <span class="id" title="var">p</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">add_comm</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> <span class="id" title="var">q</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="var">add_points</span> <span class="id" title="var">p</span> <span class="id" title="var">q</span> = <span class="id" title="var">add_points</span> <span class="id" title="var">q</span> <span class="id" title="var">p</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Set Printing All</span>.<br/>
+     
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">add_infty_2</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span>: <span class="id" title="var">affine_t</span>), <span class="id" title="var">p</span> +' <span class="id" title="var">infinity</span> = <span class="id" title="var">p</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">double_infty</span>: <span class="id" title="var">double_point</span> <span class="id" title="var">infinity</span> = <span class="id" title="var">infinity</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">add_assoc</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> <span class="id" title="var">q</span> <span class="id" title="var">r</span> : <span class="id" title="var">on_curve_t</span>), (<span class="id" title="var">p</span> +' <span class="id" title="var">q</span>) +' <span class="id" title="var">r</span> = <span class="id" title="var">p</span> +' (<span class="id" title="var">q</span> +' <span class="id" title="var">r</span>).<br/>
+   
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">add_to_double</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> : <span class="id" title="var">affine_t</span>), <span class="id" title="var">p</span> +' <span class="id" title="var">p</span> = <span class="id" title="var">double_point</span> <span class="id" title="var">p</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">simple_scalar_mult</span> (<span class="id" title="var">k</span> : <span class="id" title="var">nat</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">affine_t</span>) : <span class="id" title="var">affine_t</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">k</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| 0%<span class="id" title="var">nat</span> ⇒ <span class="id" title="var">infinity</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">S</span> <span class="id" title="var">k1</span>  ⇒ (<span class="id" title="var">simple_scalar_mult</span> (<span class="id" title="var">k1</span>) <span class="id" title="var">p</span>) +' <span class="id" title="var">p</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">double_point_closed</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="tactic">∃</span> (<span class="id" title="var">r</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="var">point</span> <span class="id" title="var">r</span> = <span class="id" title="var">double_point</span> (<span class="id" title="var">point</span> <span class="id" title="var">p</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">add_different_closed</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> <span class="id" title="var">q</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="var">is_infinity</span> (<span class="id" title="var">point</span> <span class="id" title="var">p</span>) = <span class="id" title="var">false</span> → <span class="id" title="var">is_infinity</span> (<span class="id" title="var">point</span> <span class="id" title="var">q</span>) = <span class="id" title="var">false</span> → (<span class="id" title="var">fst</span> (<span class="id" title="var">point</span> <span class="id" title="var">p</span>) ≠ <span class="id" title="var">fst</span> (<span class="id" title="var">point</span> <span class="id" title="var">q</span>)) → <span class="id" title="tactic">∃</span> <span class="id" title="var">r</span>, <span class="id" title="var">point</span> <span class="id" title="var">r</span> = <span class="id" title="var">add_different_points</span> (<span class="id" title="var">point</span> <span class="id" title="var">p</span>) (<span class="id" title="var">point</span> <span class="id" title="var">q</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">add_points_closed</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> <span class="id" title="var">q</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="tactic">∃</span> (<span class="id" title="var">r</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="var">point</span> <span class="id" title="var">r</span> = (<span class="id" title="var">point</span> <span class="id" title="var">p</span>) +' (<span class="id" title="var">point</span> <span class="id" title="var">q</span>).<br/>
+    
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">simple_scalar_mult_closed</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> : <span class="id" title="var">on_curve_t</span>) (<span class="id" title="var">k</span> : <span class="id" title="var">nat</span>), <span class="id" title="tactic">∃</span> (<span class="id" title="var">q</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="var">point</span> <span class="id" title="var">q</span> = <span class="id" title="var">simple_scalar_mult</span> <span class="id" title="var">k</span> <span class="id" title="var">p</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">simple_scalar_mult_distributivity</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">k1</span> <span class="id" title="var">k2</span> : <span class="id" title="var">nat</span>) (<span class="id" title="var">p</span>: <span class="id" title="var">on_curve_t</span>), (<span class="id" title="var">simple_scalar_mult</span> <span class="id" title="var">k1</span> <span class="id" title="var">p</span>) +' (<span class="id" title="var">simple_scalar_mult</span> <span class="id" title="var">k2</span> <span class="id" title="var">p</span>) = (<span class="id" title="var">simple_scalar_mult</span> (<span class="id" title="var">k1</span> + <span class="id" title="var">k2</span>) <span class="id" title="var">p</span>).<br/>
+ 
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">simple_scalar_mult_distributivity2</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">k</span> : <span class="id" title="var">nat</span>) (<span class="id" title="var">p1</span> <span class="id" title="var">p2</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="var">simple_scalar_mult</span> <span class="id" title="var">k</span> (<span class="id" title="var">p1</span> +' <span class="id" title="var">p2</span>) = (<span class="id" title="var">simple_scalar_mult</span> <span class="id" title="var">k</span> <span class="id" title="var">p1</span>) +' (<span class="id" title="var">simple_scalar_mult</span> <span class="id" title="var">k</span> <span class="id" title="var">p2</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">simple_scalar_mult_fold</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">k</span> : <span class="id" title="var">nat</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">affine_t</span>), (<span class="id" title="var">simple_scalar_mult</span> <span class="id" title="var">k</span> <span class="id" title="var">p</span>) +' <span class="id" title="var">p</span> = <span class="id" title="var">simple_scalar_mult</span> (<span class="id" title="var">S</span> <span class="id" title="var">k</span>) <span class="id" title="var">p</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">simple_scalar_mult2</span> (<span class="id" title="var">k</span> : <span class="id" title="var">positive</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">affine_t</span>) : <span class="id" title="var">affine_t</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">k</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">xH</span> ⇒ <span class="id" title="var">p</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">xO</span> <span class="id" title="var">r</span> ⇒ <span class="id" title="var">double_point</span> (<span class="id" title="var">simple_scalar_mult2</span> <span class="id" title="var">r</span> <span class="id" title="var">p</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">xI</span> <span class="id" title="var">r</span> ⇒ (<span class="id" title="var">double_point</span> (<span class="id" title="var">simple_scalar_mult2</span> <span class="id" title="var">r</span> <span class="id" title="var">p</span>)) +' <span class="id" title="var">p</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">bitlist</span> := <span class="id" title="var">list</span> <span class="id" title="var">bool</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">simple_scalar_mult3</span> (<span class="id" title="var">l</span> : <span class="id" title="var">bitlist</span>) (<span class="id" title="var">p</span> <span class="id" title="var">acc</span> : <span class="id" title="var">affine_t</span>) : <span class="id" title="var">affine_t</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">l</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">nil</span> ⇒ <span class="id" title="var">acc</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">false</span> :: <span class="id" title="var">l'</span> ⇒ <span class="id" title="var">simple_scalar_mult3</span> <span class="id" title="var">l'</span> <span class="id" title="var">p</span> (<span class="id" title="var">double_point</span> <span class="id" title="var">acc</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">true</span> :: <span class="id" title="var">l'</span> ⇒ <span class="id" title="var">simple_scalar_mult3</span> <span class="id" title="var">l'</span> <span class="id" title="var">p</span> ((<span class="id" title="var">double_point</span> <span class="id" title="var">acc</span>) +' <span class="id" title="var">p</span>)<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">pos_to_bitlist</span> (<span class="id" title="var">v</span> : <span class="id" title="var">positive</span>) : <span class="id" title="var">bitlist</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">v</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">xH</span> ⇒ [<span class="id" title="var">true</span>]<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">xO</span> <span class="id" title="var">r</span> ⇒ <span class="id" title="var">pos_to_bitlist</span> <span class="id" title="var">r</span> ++ [<span class="id" title="var">false</span>]<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">xI</span> <span class="id" title="var">r</span> ⇒ <span class="id" title="var">pos_to_bitlist</span> <span class="id" title="var">r</span> ++ [<span class="id" title="var">true</span>]<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">z_to_bitlist</span> (<span class="id" title="var">v</span> : <span class="id" title="var">Z</span>) : <span class="id" title="var">bitlist</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">v</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">Zpos</span> <span class="id" title="var">v'</span> ⇒ <span class="id" title="var">pos_to_bitlist</span> <span class="id" title="var">v'</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">_</span> ⇒ <span class="id" title="var">nil</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">norm_bitlist</span> (<span class="id" title="var">l</span> : <span class="id" title="var">bitlist</span>) : <span class="id" title="var">bitlist</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">l</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">false</span> :: <span class="id" title="var">l'</span> ⇒ <span class="id" title="var">norm_bitlist</span> <span class="id" title="var">l'</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">_</span> ⇒ <span class="id" title="var">l</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">bitlist_to_pos_helper</span> (<span class="id" title="var">l</span> : <span class="id" title="var">bitlist</span>) (<span class="id" title="var">acc</span> : <span class="id" title="var">positive</span>) : <span class="id" title="var">positive</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">l</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">nil</span> ⇒ <span class="id" title="var">acc</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">false</span> :: <span class="id" title="var">l'</span> ⇒ <span class="id" title="var">bitlist_to_pos_helper</span> <span class="id" title="var">l'</span> (<span class="id" title="var">xO</span> <span class="id" title="var">acc</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">true</span> :: <span class="id" title="var">l'</span> ⇒ <span class="id" title="var">bitlist_to_pos_helper</span> <span class="id" title="var">l'</span> (<span class="id" title="var">xI</span> <span class="id" title="var">acc</span>)<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">bitlist_to_pos</span> (<span class="id" title="var">l</span> : <span class="id" title="var">bitlist</span>) : <span class="id" title="var">positive</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">l</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">false</span> :: <span class="id" title="var">l'</span> ⇒ <span class="id" title="var">bitlist_to_pos</span> <span class="id" title="var">l'</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">true</span> :: <span class="id" title="var">l'</span> ⇒ <span class="id" title="var">bitlist_to_pos_helper</span> <span class="id" title="var">l'</span> <span class="id" title="var">xH</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">_</span> ⇒ <span class="id" title="var">xH</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">bitlist_to_z</span> (<span class="id" title="var">l</span> : <span class="id" title="var">bitlist</span>) : <span class="id" title="var">Z</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">l</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">false</span> :: <span class="id" title="var">l'</span> ⇒ <span class="id" title="var">bitlist_to_z</span> <span class="id" title="var">l'</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">true</span> :: <span class="id" title="var">l'</span> ⇒ <span class="id" title="var">Zpos</span> (<span class="id" title="var">bitlist_to_pos</span> <span class="id" title="var">l</span>)<br/>
+&nbsp;&nbsp;| <span class="id" title="var">_</span> ⇒ 0<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">pos_bitfold</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">l</span> : <span class="id" title="var">bitlist</span>) <span class="id" title="var">a</span>, <span class="id" title="var">pos_to_bitlist</span>( <span class="id" title="var">bitlist_to_pos_helper</span> <span class="id" title="var">l</span> <span class="id" title="var">a</span>) = (<span class="id" title="var">pos_to_bitlist</span> <span class="id" title="var">a</span>) ++ <span class="id" title="var">l</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">bitlist_to_z_id</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">l</span> : <span class="id" title="var">bitlist</span>), <span class="id" title="var">z_to_bitlist</span> (<span class="id" title="var">bitlist_to_z</span> <span class="id" title="var">l</span>) = <span class="id" title="var">norm_bitlist</span> <span class="id" title="var">l</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">bitlist_to_pos_append_lsb1</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">l</span> : <span class="id" title="var">bitlist</span>) <span class="id" title="var">a</span>, <span class="id" title="var">bitlist_to_pos_helper</span> (<span class="id" title="var">l</span> ++ [<span class="id" title="var">true</span>]) <span class="id" title="var">a</span> = (<span class="id" title="var">bitlist_to_pos_helper</span> <span class="id" title="var">l</span> <span class="id" title="var">a</span>)~1%<span class="id" title="var">positive</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">bitlist_to_z_append_lsb1</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">l</span> : <span class="id" title="var">bitlist</span>), <span class="id" title="var">bitlist_to_z</span> (<span class="id" title="var">l</span> ++ [<span class="id" title="var">true</span>]) = (2 × (<span class="id" title="var">bitlist_to_z</span> <span class="id" title="var">l</span>) + 1).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">bitlist_to_pos_append_lsb0</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">l</span> : <span class="id" title="var">bitlist</span>) <span class="id" title="var">a</span>, <span class="id" title="var">bitlist_to_pos_helper</span> (<span class="id" title="var">l</span> ++ [<span class="id" title="var">false</span>]) <span class="id" title="var">a</span> = (<span class="id" title="var">bitlist_to_pos_helper</span> <span class="id" title="var">l</span> <span class="id" title="var">a</span>)~0%<span class="id" title="var">positive</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">bitlist_to_z_append_lsb0</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">l</span> : <span class="id" title="var">bitlist</span>), <span class="id" title="var">bitlist_to_z</span> (<span class="id" title="var">l</span> ++ [<span class="id" title="var">false</span>]) = 2 × (<span class="id" title="var">bitlist_to_z</span> <span class="id" title="var">l</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">z_to_bitlist_id</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">v</span> : <span class="id" title="var">Z</span>), (0 ≤ <span class="id" title="var">v</span>) → <span class="id" title="var">bitlist_to_z</span> (<span class="id" title="var">z_to_bitlist</span> <span class="id" title="var">v</span>) = <span class="id" title="var">v</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">scalar_mult_foldi_helper</span> (<span class="id" title="var">k</span> : <span class="id" title="var">secp256k1_scalar_t</span>) <span class="id" title="var">p</span> :=<br/>
+&nbsp;&nbsp;(<span class="id" title="keyword">fun</span> (<span class="id" title="var">i_33</span> : <span class="id" title="var">uint_size</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">q_32</span> : <span class="id" title="var">prod</span> <span class="id" title="var">secp256k1_field_element_t</span> <span class="id" title="var">secp256k1_field_element_t</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">match</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">BinInt.Z.testbit</span> <span class="id" title="var">k</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(@<span class="id" title="var">from_uint_size</span> <span class="id" title="var">Z</span> <span class="id" title="var">Z_uint_sizable</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">Z_to_uint_size</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">BinInt.Z.sub</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">BinInt.Z.sub</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">BinInt.Z.of_N</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">N.of_nat</span> (<span class="id" title="var">uint_size_to_nat</span> <span class="id" title="var">scalar_bits_v</span>)))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">BinInt.Z.of_N</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">N.of_nat</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">uint_size_to_nat</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(@<span class="id" title="var">usize</span> <span class="id" title="var">Z</span> <span class="id" title="var">Z_uint_sizable</span> (<span class="id" title="var">Zpos</span> <span class="id" title="var">xH</span>))))))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">BinInt.Z.of_N</span> (<span class="id" title="var">N.of_nat</span> (<span class="id" title="var">uint_size_to_nat</span> <span class="id" title="var">i_33</span>))))))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">return</span> (<span class="id" title="var">prod</span> <span class="id" title="var">secp256k1_field_element_t</span> <span class="id" title="var">secp256k1_field_element_t</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">true</span> ⇒ <span class="id" title="var">add_points</span> <span class="id" title="var">p</span> (<span class="id" title="var">double_point</span> <span class="id" title="var">q_32</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| <span class="id" title="var">false</span> ⇒ <span class="id" title="var">double_point</span> <span class="id" title="var">q_32</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">end</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">scalar_mult_body_eq_foldi_helper</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">k</span> <span class="id" title="var">p</span>, <span class="id" title="var">scalar_mult_foldi_helper</span> <span class="id" title="var">k</span> <span class="id" title="var">p</span> =<br/>
+&nbsp;&nbsp;(<span class="id" title="keyword">fun</span> (<span class="id" title="var">i_33</span> : <span class="id" title="var">uint_size</span>) (<span class="id" title="var">q_32</span> : <span class="id" title="var">affine_t</span>) ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">if</span> <span class="id" title="var">nat_mod_bit</span> <span class="id" title="var">k</span> (<span class="id" title="var">scalar_bits_v</span> - <span class="id" title="var">usize</span> 1 - <span class="id" title="var">i_33</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">then</span> <span class="id" title="var">p</span> +' (<span class="id" title="var">double_point</span> <span class="id" title="var">q_32</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">else</span> <span class="id" title="var">double_point</span> <span class="id" title="var">q_32</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">foldi_helper_zero</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">k</span> : <span class="id" title="var">secp256k1_scalar_t</span>) <span class="id" title="var">p</span> <span class="id" title="var">i</span> <span class="id" title="var">acc</span>, <span class="id" title="var">val</span> <span class="id" title="var">_</span> <span class="id" title="var">k</span> = 0 → <span class="id" title="var">scalar_mult_foldi_helper</span> <span class="id" title="var">k</span> <span class="id" title="var">p</span> <span class="id" title="var">i</span> <span class="id" title="var">acc</span> = <span class="id" title="var">double_point</span> <span class="id" title="var">acc</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">max_unsigned32</span> : @<span class="id" title="var">max_unsigned</span> <span class="id" title="var">WORDSIZE32</span> = 4294967295.<br/>
+ 
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">modulus32</span> : @<span class="id" title="var">modulus</span> <span class="id" title="var">WORDSIZE32</span> = 4294967296.<br/>
+ 
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">scalar_mult_zero</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">k</span> : <span class="id" title="var">secp256k1_scalar_t</span>) <span class="id" title="var">p</span>, <span class="id" title="var">val</span> <span class="id" title="var">_</span> <span class="id" title="var">k</span> = 0 → <span class="id" title="var">k</span> *' <span class="id" title="var">p</span> = <span class="id" title="var">infinity</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">list_length_nonneg</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">l</span> : <span class="id" title="var">bitlist</span>), 0 ≤ <span class="id" title="var">length</span> <span class="id" title="var">l</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">usize_sub_helper</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">n</span>, <span class="id" title="var">usize</span> (<span class="id" title="var">usize</span> 256 - <span class="id" title="var">n</span>) = <span class="id" title="var">usize</span> (256 - <span class="id" title="var">n</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">usize_sub_helper2</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">n</span> <span class="id" title="var">m</span>, 0 ≤ <span class="id" title="var">n</span> ≤ 256 → 0 ≤ <span class="id" title="var">m</span> ≤ 256 → <span class="id" title="var">usize</span>(<span class="id" title="var">usize</span> <span class="id" title="var">n</span> - <span class="id" title="var">usize</span> <span class="id" title="var">m</span>) = <span class="id" title="var">usize</span> (<span class="id" title="var">n</span> - <span class="id" title="var">m</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">scalar_mult_foldi_skip_leading_zeros</span>:<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">∀</span> (<span class="id" title="var">n</span> <span class="id" title="var">m</span> : <span class="id" title="var">nat</span>) (<span class="id" title="var">l</span> : <span class="id" title="var">bitlist</span>) <span class="id" title="var">p</span>, (0 ≤ <span class="id" title="var">bitlist_to_z</span> <span class="id" title="var">l</span> &lt; <span class="id" title="var">scalar_max</span>) → (<span class="id" title="var">length</span> <span class="id" title="var">l</span> ≤ <span class="id" title="var">n</span> ≤ 256) → (<span class="id" title="var">m</span> = <span class="id" title="var">length</span> <span class="id" title="var">l</span>) →<br/>
+&nbsp;&nbsp;(<span class="id" title="var">foldi_</span> <span class="id" title="var">n</span> (<span class="id" title="var">repr</span> (<span class="id" title="var">scalar_bits_v</span> - <span class="id" title="var">n</span>)) (<span class="id" title="var">scalar_mult_foldi_helper</span> (<span class="id" title="var">mkznz</span> <span class="id" title="var">_</span> <span class="id" title="var">_</span> (<span class="id" title="var">modz</span> <span class="id" title="var">scalar_max</span> (<span class="id" title="var">bitlist_to_z</span> <span class="id" title="var">l</span>))) <span class="id" title="var">p</span>) <span class="id" title="var">infinity</span>) = (<span class="id" title="var">foldi_</span> <span class="id" title="var">m</span> (<span class="id" title="var">repr</span> (<span class="id" title="var">scalar_bits_v</span> - <span class="id" title="var">m</span>)) (<span class="id" title="var">scalar_mult_foldi_helper</span> (<span class="id" title="var">mkznz</span> <span class="id" title="var">_</span> <span class="id" title="var">_</span> (<span class="id" title="var">modz</span> <span class="id" title="var">scalar_max</span> (<span class="id" title="var">bitlist_to_z</span> <span class="id" title="var">l</span>))) <span class="id" title="var">p</span>) <span class="id" title="var">infinity</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">simple_scalar_mult2_def</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">k</span> : <span class="id" title="var">positive</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="var">simple_scalar_mult2</span> <span class="id" title="var">k</span> <span class="id" title="var">p</span> = <span class="id" title="var">simple_scalar_mult</span> (<span class="id" title="var">Pos.to_nat</span> <span class="id" title="var">k</span>) <span class="id" title="var">p</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">simple_scalar_mult3_lsb1</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">l</span> : <span class="id" title="var">bitlist</span>) (<span class="id" title="var">p</span> <span class="id" title="var">acc</span> : <span class="id" title="var">affine_t</span>), <span class="id" title="var">simple_scalar_mult3</span> (<span class="id" title="var">l</span> ++ [<span class="id" title="var">true</span>]) <span class="id" title="var">p</span> <span class="id" title="var">acc</span> = (<span class="id" title="var">double_point</span> (<span class="id" title="var">simple_scalar_mult3</span> <span class="id" title="var">l</span> <span class="id" title="var">p</span> <span class="id" title="var">acc</span>)) +' <span class="id" title="var">p</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">simple_scalar_mult3_lsb0</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">l</span> : <span class="id" title="var">bitlist</span>) (<span class="id" title="var">p</span> <span class="id" title="var">acc</span> : <span class="id" title="var">affine_t</span>), <span class="id" title="var">simple_scalar_mult3</span> (<span class="id" title="var">l</span> ++ [<span class="id" title="var">false</span>]) <span class="id" title="var">p</span> <span class="id" title="var">acc</span> = (<span class="id" title="var">double_point</span> (<span class="id" title="var">simple_scalar_mult3</span> <span class="id" title="var">l</span> <span class="id" title="var">p</span> <span class="id" title="var">acc</span>)).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">simple_scalar_mult3_def</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">k</span> : <span class="id" title="var">nat</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="var">simple_scalar_mult3</span> (<span class="id" title="var">z_to_bitlist</span> (<span class="id" title="var">Z.of_nat</span> <span class="id" title="var">k</span>)) <span class="id" title="var">p</span> <span class="id" title="var">infinity</span> = <span class="id" title="var">simple_scalar_mult</span> <span class="id" title="var">k</span> <span class="id" title="var">p</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">nat_to_scalar</span> (<span class="id" title="var">n</span> : <span class="id" title="var">nat</span>) : <span class="id" title="var">secp256k1_scalar_t</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">nat_to_scalar_id</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">n</span> : <span class="id" title="var">secp256k1_scalar_t</span>), <span class="id" title="var">nat_to_scalar</span> (<span class="id" title="var">Z.to_nat</span> <span class="id" title="var">n</span>) = <span class="id" title="var">n</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">nat_to_scalar_add</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">a</span> <span class="id" title="var">b</span> : <span class="id" title="var">nat</span>), <span class="id" title="var">nat_to_scalar</span> <span class="id" title="var">a</span> +% <span class="id" title="var">nat_to_scalar</span> <span class="id" title="var">b</span> = <span class="id" title="var">nat_to_scalar</span> (<span class="id" title="var">a</span> + <span class="id" title="var">b</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">nat_to_scalar_mult</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">a</span> <span class="id" title="var">b</span> : <span class="id" title="var">nat</span>), <span class="id" title="var">nat_to_scalar</span> <span class="id" title="var">a</span> *% <span class="id" title="var">nat_to_scalar</span> <span class="id" title="var">b</span> = <span class="id" title="var">nat_to_scalar</span> (<span class="id" title="var">a</span> × <span class="id" title="var">b</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">scalar_mult_def</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">k</span> : <span class="id" title="var">secp256k1_scalar_t</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">affine_t</span>), <span class="id" title="var">k</span> *' <span class="id" title="var">p</span> = <span class="id" title="var">simple_scalar_mult3</span> (<span class="id" title="var">z_to_bitlist</span> <span class="id" title="var">k</span>) <span class="id" title="var">p</span> <span class="id" title="var">infinity</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">simple_scalar_mult_mod</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">k</span> : <span class="id" title="var">nat</span>) (<span class="id" title="var">p</span>: <span class="id" title="var">affine_t</span>), <span class="id" title="var">simple_scalar_mult</span> <span class="id" title="var">k</span> <span class="id" title="var">p</span> = <span class="id" title="var">simple_scalar_mult</span> (<span class="id" title="var">k</span> <span class="id" title="var">mod</span> (<span class="id" title="var">Z.to_nat</span> <span class="id" title="var">scalar_max</span>)) <span class="id" title="var">p</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">scalar_mult_distributivity</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">k1</span> <span class="id" title="var">k2</span> : <span class="id" title="var">secp256k1_scalar_t</span>) (<span class="id" title="var">p</span>: <span class="id" title="var">on_curve_t</span>), <span class="id" title="var">k1</span> *' <span class="id" title="var">p</span> +' <span class="id" title="var">k2</span> *' <span class="id" title="var">p</span> = (<span class="id" title="var">k1</span> +% <span class="id" title="var">k2</span>) *' <span class="id" title="var">p</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">scalar_mult_distributivity2</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">k</span> : <span class="id" title="var">secp256k1_scalar_t</span>) (<span class="id" title="var">p1</span> <span class="id" title="var">p2</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="var">k</span> *' (<span class="id" title="var">p1</span> +' <span class="id" title="var">p2</span>) = <span class="id" title="var">k</span> *' <span class="id" title="var">p1</span> +' <span class="id" title="var">k</span> *' <span class="id" title="var">p2</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">scalar_mult_closed</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> : <span class="id" title="var">on_curve_t</span>) (<span class="id" title="var">k</span> : <span class="id" title="var">secp256k1_scalar_t</span>), <span class="id" title="tactic">∃</span> (<span class="id" title="var">q</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="var">point</span> <span class="id" title="var">q</span> = <span class="id" title="var">k</span> *' (<span class="id" title="var">point</span> <span class="id" title="var">p</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">scalar_mult_fold_once</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">a</span> <span class="id" title="var">b</span> : <span class="id" title="var">nat</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">on_curve_t</span>), (<span class="id" title="var">simple_scalar_mult</span> (<span class="id" title="var">a</span> × <span class="id" title="var">b</span>) <span class="id" title="var">p</span>) +' (<span class="id" title="var">simple_scalar_mult</span> <span class="id" title="var">b</span> <span class="id" title="var">p</span>) = <span class="id" title="var">simple_scalar_mult</span> (<span class="id" title="var">S</span>(<span class="id" title="var">a</span>) × <span class="id" title="var">b</span>) <span class="id" title="var">p</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">scalar_mult_assoc2</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">a</span> <span class="id" title="var">b</span> : <span class="id" title="var">secp256k1_scalar_t</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="var">a</span> *' <span class="id" title="var">b</span> *' <span class="id" title="var">p</span> = (<span class="id" title="var">a</span> *% <span class="id" title="var">b</span>) *' <span class="id" title="var">p</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">scalar_mult_generator_zero</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">a</span> : <span class="id" title="var">secp256k1_scalar_t</span>), <span class="id" title="var">a</span> = <span class="id" title="var">nat_mod_zero</span> ↔ <span class="id" title="var">is_infinity</span> (<span class="id" title="var">a</span> *' <span class="id" title="var">generator</span>) = <span class="id" title="var">true</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">scalar_mult_generator_not_zero</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">a</span> : <span class="id" title="var">secp256k1_scalar_t</span>), <span class="id" title="var">a</span> ≠ <span class="id" title="var">nat_mod_zero</span> → <span class="id" title="var">is_infinity</span> (<span class="id" title="var">a</span> *' <span class="id" title="var">generator</span>) = <span class="id" title="var">false</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">simple_batch_scalar_multiplication</span><br/>
+(<span class="id" title="var">elems</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">affine_t</span>))<br/>
+: <span class="id" title="var">affine_t</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">elems</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| [] ⇒ <span class="id" title="var">infinity</span><br/>
+&nbsp;&nbsp;| (<span class="id" title="var">a</span>, <span class="id" title="var">p</span>) :: <span class="id" title="var">r</span> ⇒ <span class="id" title="var">a</span> *' <span class="id" title="var">p</span> +' (<span class="id" title="var">simple_batch_scalar_multiplication</span> <span class="id" title="var">r</span>)<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">batch_scalar_opt_helper</span><br/>
+(<span class="id" title="var">head</span> : (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">affine_t</span>)) (<span class="id" title="var">elems</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">affine_t</span>))<br/>
+: <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">affine_t</span>) :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> (<span class="id" title="var">head</span>, <span class="id" title="var">elems</span>) <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| ((<span class="id" title="var">a1</span>, <span class="id" title="var">p1</span>), (<span class="id" title="var">a2</span>, <span class="id" title="var">p2</span>) :: <span class="id" title="var">r</span>) ⇒ (<span class="id" title="var">a1</span> -% <span class="id" title="var">a2</span>,<span class="id" title="var">p1</span>) :: <span class="id" title="var">batch_scalar_opt_helper</span> (<span class="id" title="var">a2</span>, <span class="id" title="var">p1</span> +' <span class="id" title="var">p2</span>) <span class="id" title="var">r</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">_</span> ⇒ <span class="id" title="var">head</span> :: <span class="id" title="var">elems</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">batch_scalar_opt</span> (<span class="id" title="var">elems</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">affine_t</span>)) :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">elems</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">head</span> :: <span class="id" title="var">r</span> ⇒ <span class="id" title="var">batch_scalar_opt_helper</span> <span class="id" title="var">head</span> <span class="id" title="var">r</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">_</span> ⇒ <span class="id" title="var">elems</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">on_curve_list_to_affines</span> (<span class="id" title="var">elems</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">on_curve_t</span>)) : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">affine_t</span>) :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">elems</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| (<span class="id" title="var">a</span>, <span class="id" title="var">P</span>) :: <span class="id" title="var">r</span> ⇒ (<span class="id" title="var">a</span>, <span class="id" title="var">point</span> <span class="id" title="var">P</span>) :: <span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">r</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">nil</span> ⇒ <span class="id" title="var">nil</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">seq_len_eq</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">A</span> <span class="id" title="var">B</span> (<span class="id" title="var">l1</span> : <span class="id" title="var">seq</span> <span class="id" title="var">A</span>) (<span class="id" title="var">l2</span> : <span class="id" title="var">seq</span> <span class="id" title="var">B</span>), <span class="id" title="var">seq_len</span> <span class="id" title="var">l1</span> = <span class="id" title="var">seq_len</span> <span class="id" title="var">l2</span> ↔ <span class="id" title="var">length</span> <span class="id" title="var">l1</span> = <span class="id" title="var">length</span> <span class="id" title="var">l2</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">on_curve_list_to_affines_length0</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">elems</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">on_curve_t</span>)),<br/>
+&nbsp;&nbsp;<span class="id" title="var">length</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>) = <span class="id" title="var">length</span> <span class="id" title="var">elems</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">on_curve_list_to_affines_length</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">elems</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">on_curve_t</span>)),<br/>
+&nbsp;&nbsp;<span class="id" title="var">seq_len</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>) = <span class="id" title="var">seq_len</span> <span class="id" title="var">elems</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">on_curve_list_to_affines_length2</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">a</span> <span class="id" title="var">b</span> (<span class="id" title="var">elems</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">on_curve_t</span>)),<br/>
+&nbsp;&nbsp;<span class="id" title="var">seq_len</span> (<span class="id" title="var">a</span> :: <span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>) = <span class="id" title="var">seq_len</span> (<span class="id" title="var">b</span> :: <span class="id" title="var">elems</span>).<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">Search</span> (<span class="id" title="var">S</span> ?<span class="id" title="var">a</span> = <span class="id" title="var">S</span> ?<span class="id" title="var">b</span> ↔ ?<span class="id" title="var">a</span> = ?<span class="id" title="var">b</span>).<br/>
+<span class="id" title="keyword">Qed</span>.<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">on_curve_list_to_affines_concat2</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">a</span> <span class="id" title="var">b</span>,<br/>
+&nbsp;&nbsp;<span class="id" title="var">on_curve_list_to_affines</span> (<span class="id" title="var">a</span> ++ <span class="id" title="var">b</span>) = <span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">a</span> ++ <span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">b</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">on_curve_list_to_affines_rev</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">a</span>,<br/>
+&nbsp;&nbsp;<span class="id" title="var">on_curve_list_to_affines</span> (<span class="id" title="var">rev</span> <span class="id" title="var">a</span>) = <span class="id" title="var">rev</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">a</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">on_curve_list_to_affines_nth</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">i</span> <span class="id" title="var">l</span> <span class="id" title="var">default</span>,<br/>
+&nbsp;&nbsp;(<span class="id" title="var">i</span> &lt; <span class="id" title="var">length</span> <span class="id" title="var">l</span>)%<span class="id" title="var">nat</span> → <span class="id" title="tactic">∃</span> (<span class="id" title="var">a</span> : <span class="id" title="var">secp256k1_scalar_t</span>) (<span class="id" title="var">P</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="var">nth</span> <span class="id" title="var">i</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">l</span>) <span class="id" title="var">default</span> = (<span class="id" title="var">a</span>, <span class="id" title="var">P</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">on_curve_list_to_affines_contra</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">l</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">affine_t</span>)) <span class="id" title="var">default</span>,<br/>
+&nbsp;&nbsp;(<span class="id" title="keyword">∀</span> (<span class="id" title="var">i</span> : <span class="id" title="var">nat</span>), (<span class="id" title="var">i</span> &lt; <span class="id" title="var">length</span> <span class="id" title="var">l</span>)%<span class="id" title="var">nat</span> → <span class="id" title="var">is_point_on_curve</span> (<span class="id" title="var">snd</span> (<span class="id" title="var">nth</span> <span class="id" title="var">i</span> <span class="id" title="var">l</span> <span class="id" title="var">default</span>)) = <span class="id" title="var">true</span>)<br/>
+&nbsp;&nbsp;→ <span class="id" title="tactic">∃</span> <span class="id" title="var">l2</span>, <span class="id" title="var">l</span> = <span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">l2</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">all_on_curve</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">l</span> <span class="id" title="var">i</span> <span class="id" title="var">default</span>,<br/>
+&nbsp;&nbsp;(<span class="id" title="var">i</span> &lt; <span class="id" title="var">length</span> <span class="id" title="var">l</span>)%<span class="id" title="var">nat</span> → <span class="id" title="var">is_point_on_curve</span> (<span class="id" title="var">snd</span> (<span class="id" title="var">nth</span> <span class="id" title="var">i</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">l</span>) <span class="id" title="var">default</span>)) = <span class="id" title="var">true</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">usize_eq</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">x</span> : <span class="id" title="var">Z</span>), 0 ≤ <span class="id" title="var">x</span> ≤ @<span class="id" title="var">max_unsigned</span> <span class="id" title="var">WORDSIZE32</span> → (<span class="id" title="var">x</span> = <span class="id" title="var">usize</span> <span class="id" title="var">x</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">simple_batch_scalar_mult_closed</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">elems1</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">on_curve_t</span>)),<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">∃</span> (<span class="id" title="var">p</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="var">point</span> <span class="id" title="var">p</span> = <span class="id" title="var">simple_batch_scalar_multiplication</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems1</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">simple_batch_scalar_mult_concat</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">elems1</span> <span class="id" title="var">elems2</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">on_curve_t</span>)),<br/>
+<span class="id" title="var">simple_batch_scalar_multiplication</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems1</span> ++ <span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems2</span>)<br/>
+&nbsp;&nbsp;= (<span class="id" title="var">simple_batch_scalar_multiplication</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems1</span>)) +' (<span class="id" title="var">simple_batch_scalar_multiplication</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems2</span>)).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">simple_batch_scalar_prepend</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">elems1</span> <span class="id" title="var">elems2</span> <span class="id" title="var">pre</span>,<br/>
+&nbsp;&nbsp;<span class="id" title="var">simple_batch_scalar_multiplication</span> <span class="id" title="var">elems1</span> = <span class="id" title="var">simple_batch_scalar_multiplication</span> <span class="id" title="var">elems2</span> → <span class="id" title="var">simple_batch_scalar_multiplication</span> (<span class="id" title="var">pre</span> ++ <span class="id" title="var">elems1</span>) = <span class="id" title="var">simple_batch_scalar_multiplication</span> (<span class="id" title="var">pre</span> ++ <span class="id" title="var">elems2</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">product_sum_foldi_helper</span> (<span class="id" title="var">elems</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">affine_t</span>)) : <span class="id" title="var">uint_size</span> → <span class="id" title="var">affine_t</span> → <span class="id" title="var">affine_t</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">fun</span> <span class="id" title="var">i_43</span> <span class="id" title="var">res_42</span> ⇒<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> '(<span class="id" title="var">ai_44</span>, <span class="id" title="var">pi_45</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">seq_index</span> <span class="id" title="var">elems</span> (<span class="id" title="var">i_43</span>) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">res_42</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">add_points</span> <span class="id" title="var">res_42</span> (<span class="id" title="var">scalar_multiplication</span> <span class="id" title="var">ai_44</span> <span class="id" title="var">pi_45</span>) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">res_42</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">product_sum_eq_foldi_helper</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">elems</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">affine_t</span>)),<br/>
+&nbsp;&nbsp;<span class="id" title="var">product_sum</span> <span class="id" title="var">elems</span> = <span class="id" title="var">foldi</span> (<span class="id" title="var">usize</span> 0) (<span class="id" title="var">seq_len</span> <span class="id" title="var">elems</span>) (<span class="id" title="var">product_sum_foldi_helper</span> <span class="id" title="var">elems</span>) <span class="id" title="var">infinity</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">product_sum_foldi_helper_ignore_last</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">elems1</span> <span class="id" title="var">elems2</span> <span class="id" title="var">acc</span>,<br/>
+&nbsp;&nbsp;<span class="id" title="var">foldi</span> (<span class="id" title="var">usize</span> 0) (<span class="id" title="var">seq_len</span> <span class="id" title="var">elems1</span>) (<span class="id" title="var">product_sum_foldi_helper</span> (<span class="id" title="var">elems1</span> ++ <span class="id" title="var">elems2</span>)) <span class="id" title="var">acc</span> = <span class="id" title="var">foldi</span> (<span class="id" title="var">usize</span> 0) (<span class="id" title="var">seq_len</span> <span class="id" title="var">elems1</span>) (<span class="id" title="var">product_sum_foldi_helper</span> <span class="id" title="var">elems1</span>) <span class="id" title="var">acc</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">product_sum_def</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">elems</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">on_curve_t</span>)),<br/>
+&nbsp;&nbsp;0 ≤ <span class="id" title="var">seq_len</span> <span class="id" title="var">elems</span> ≤ @<span class="id" title="var">max_unsigned</span> <span class="id" title="var">WORDSIZE32</span> → <span class="id" title="var">product_sum</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>) = <span class="id" title="var">simple_batch_scalar_multiplication</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">opt_foldi_helper</span> := (<span class="id" title="keyword">fun</span> (<span class="id" title="var">i_36</span> : <span class="id" title="var">uint_size</span>) (<span class="id" title="var">new_elems_35</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">affine_t</span>)) ⇒<br/>
+<span class="id" title="keyword">let</span> '(<span class="id" title="var">ai_37</span>, <span class="id" title="var">pi_38</span>) :=<br/>
+&nbsp;&nbsp;<span class="id" title="var">seq_index</span> (<span class="id" title="var">new_elems_35</span>) (<span class="id" title="var">i_36</span>) <span class="id" title="tactic">in</span> <br/>
+<span class="id" title="keyword">let</span> '(<span class="id" title="var">aiplus1_39</span>, <span class="id" title="var">piplus1_40</span>) :=<br/>
+&nbsp;&nbsp;<span class="id" title="var">seq_index</span> (<span class="id" title="var">new_elems_35</span>) ((<span class="id" title="var">i_36</span>) + (<span class="id" title="var">usize</span> 1)) <span class="id" title="tactic">in</span> <br/>
+<span class="id" title="keyword">let</span> <span class="id" title="var">new_elems_35</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="var">seq_upd</span> <span class="id" title="var">new_elems_35</span> (<span class="id" title="var">i_36</span>) (((<span class="id" title="var">ai_37</span>) -% (<span class="id" title="var">aiplus1_39</span>), <span class="id" title="var">pi_38</span>)) <span class="id" title="tactic">in</span> <br/>
+<span class="id" title="keyword">let</span> <span class="id" title="var">new_elems_35</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="var">seq_upd</span> <span class="id" title="var">new_elems_35</span> ((<span class="id" title="var">i_36</span>) + (<span class="id" title="var">usize</span> 1)) ((<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">aiplus1_39</span>,<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">add_points</span> (<span class="id" title="var">pi_38</span>) (<span class="id" title="var">piplus1_40</span>)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;)) <span class="id" title="tactic">in</span> <br/>
+(<span class="id" title="var">new_elems_35</span>)).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">seq_upd_length</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">A</span> : <span class="id" title="keyword">Type</span>) `{<span class="id" title="var">Default</span> <span class="id" title="var">A</span>} (<span class="id" title="var">l</span> : <span class="id" title="var">seq</span> <span class="id" title="var">A</span>) <span class="id" title="var">i</span> <span class="id" title="var">elem</span>, <span class="id" title="var">length</span> (<span class="id" title="var">seq_upd</span> <span class="id" title="var">l</span> <span class="id" title="var">i</span> <span class="id" title="var">elem</span>) = <span class="id" title="var">length</span> <span class="id" title="var">l</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">seq_upd_split</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">A</span> : <span class="id" title="keyword">Type</span>) `{<span class="id" title="var">Default</span> <span class="id" title="var">A</span>} (<span class="id" title="var">l1</span> <span class="id" title="var">l2</span> : <span class="id" title="var">seq</span> <span class="id" title="var">A</span>) <span class="id" title="var">elem</span>,<br/>
+&nbsp;&nbsp;<span class="id" title="var">seq_upd</span> (<span class="id" title="var">l1</span> ++ <span class="id" title="var">l2</span>) (<span class="id" title="var">length</span> <span class="id" title="var">l1</span>) <span class="id" title="var">elem</span> = <span class="id" title="var">l1</span> ++ (<span class="id" title="var">seq_upd</span> <span class="id" title="var">l2</span> 0 <span class="id" title="var">elem</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">seq_upd_zero</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">A</span> : <span class="id" title="keyword">Type</span>) `{<span class="id" title="var">Default</span> <span class="id" title="var">A</span>} <span class="id" title="var">a</span> <span class="id" title="var">l</span> <span class="id" title="var">b</span>,<br/>
+&nbsp;&nbsp;<span class="id" title="var">seq_upd</span> (<span class="id" title="var">a</span> :: <span class="id" title="var">l</span>) 0 <span class="id" title="var">b</span> = <span class="id" title="var">b</span> :: <span class="id" title="var">l</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">seq_upd_on_curve</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">l</span> <span class="id" title="var">i</span> <span class="id" title="var">b</span>,<br/>
+&nbsp;&nbsp;<span class="id" title="var">is_point_on_curve</span> (<span class="id" title="var">snd</span> <span class="id" title="var">b</span>) = <span class="id" title="var">true</span> → <span class="id" title="tactic">∃</span> <span class="id" title="var">l2</span>, <span class="id" title="var">seq_upd</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">l</span>) <span class="id" title="var">i</span> <span class="id" title="var">b</span> = <span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">l2</span>.<br/>
+
+<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">batch_scalar_optimization_eq</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">elems</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">on_curve_t</span>)),<br/>
+&nbsp;&nbsp;<span class="id" title="var">simple_batch_scalar_multiplication</span> (<span class="id" title="var">batch_scalar_optimization</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>)) = <span class="id" title="var">simple_batch_scalar_multiplication</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">batch_scalar_opt_length</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">l</span>,<br/>
+&nbsp;&nbsp;<span class="id" title="var">seq_len</span> (<span class="id" title="var">batch_scalar_optimization</span> <span class="id" title="var">l</span>) = <span class="id" title="var">seq_len</span> <span class="id" title="var">l</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">batch_scalar_opt_on_curve_list_to_affines</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">l</span>,<br/>
+&nbsp;&nbsp;<span class="id" title="tactic">∃</span> <span class="id" title="var">l2</span>, <span class="id" title="var">batch_scalar_optimization</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">l</span>) = <span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">l2</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">wordsize32_eq</span>: @<span class="id" title="var">wordsize</span> <span class="id" title="var">WORDSIZE32</span> = 32.<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">batch_scalar_mult_def</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">elems</span> :  <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">on_curve_t</span>)),<br/>
+&nbsp;&nbsp;0 ≤ <span class="id" title="var">seq_len</span> <span class="id" title="var">elems</span> ≤ @<span class="id" title="var">max_unsigned</span> <span class="id" title="var">WORDSIZE32</span> →<br/>
+&nbsp;&nbsp;<span class="id" title="var">batch_scalar_multiplication</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>) = <span class="id" title="var">simple_batch_scalar_multiplication</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>).<br/>
+</div>
+<hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>
