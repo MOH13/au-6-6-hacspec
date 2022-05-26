@@ -80,7 +80,7 @@ fn test_wrong_s() {
 #[test]
 #[allow(non_snake_case)]
 fn test_multi_sig() {
-  fn helper(avs: Vec<(Secp256k1ScalarGenerator, Secp256k1ScalarGenerator, Secp256k1ScalarGenerator)>, m: Vec<u8>) -> TestResult {
+  fn helper(avs: Vec<(Secp256k1ScalarGenerator, Secp256k1ScalarGenerator)>, m: Vec<u8>) -> TestResult {
     if avs.len() == 0 {
       return TestResult::discard()
     }
@@ -100,7 +100,7 @@ fn test_multi_sig() {
       let A = scalar_multiplication(a, GENERATOR());
       secret_keys[i] = a;
       public_keys[i] = A;
-      rands[i] = avs[i].2.into();
+      rands[i] = v;
       random_points[i] = scalar_multiplication(rands[i], GENERATOR());
     }
     let m = ByteSeq::from_vec(m.iter().map(|i| (*i).into()).collect());
@@ -120,9 +120,9 @@ fn test_multi_sig() {
     TestResult::from_bool(multi_sig_verify(public_keys, &m, signature))
   }
   QuickCheck::new()
-      .gen(Gen::new(5))
+      .gen(Gen::new(10))
       .tests(5)
-      .quickcheck(helper as fn(Vec<(Secp256k1ScalarGenerator, Secp256k1ScalarGenerator, Secp256k1ScalarGenerator)>, Vec<u8>) -> TestResult)
+      .quickcheck(helper as fn(Vec<(Secp256k1ScalarGenerator, Secp256k1ScalarGenerator)>, Vec<u8>) -> TestResult)
 }
 
 #[test]
@@ -154,6 +154,6 @@ fn test_lots_of_batch_verification() {
   }
   QuickCheck::new()
       .gen(Gen::new(10))
-      .tests(2)
+      .tests(5)
       .quickcheck(helper as fn(Vec<(Secp256k1ScalarGenerator, Secp256k1ScalarGenerator, Vec<u8>, Secp256k1ScalarGenerator)>) -> TestResult);
 }
