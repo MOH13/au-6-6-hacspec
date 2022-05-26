@@ -352,7 +352,6 @@ Proof.
     unfold one.
     unfold zero.  
     assert (H1: 1 < max). { lia. }
-    Check (Zmod_1_l max H1).
     pose proof (Zmod_1_l max H1).
     assert (1 mod max <> 0 mod max). {
       rewrite H0.
@@ -1074,7 +1073,6 @@ Proof.
     rewrite <- (nat_mod_double_neg _ elem_max_prime qy) in H.
     destruct H as [H1 H2].
     pose proof nat_mod_neg_inj _ elem_max_prime _ _ H2.
-    Search (?a -> ?b -> ?a /\ ?b).
     apply (conj H1) in H.
     exact H.
   - intros H.
