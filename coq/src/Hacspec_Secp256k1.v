@@ -2078,20 +2078,6 @@ Proof.
     reflexivity.
 Qed.
 
-Lemma scalar_mult_generator_zero: forall (a : secp256k1_scalar_t), a = nat_mod_zero <-> is_infinity (a *' generator) = true.
-Proof.
-  intros a.
-  split.
-  - intros H.
-    rewrite H.
-    rewrite scalar_mult_def.
-    simpl.
-    exact infty_is_infty.
-  - intros H.
-    apply is_infty_means_infty in H.
-Admitted.
-
-
 Lemma scalar_mult_generator_not_zero: forall (a : secp256k1_scalar_t), a <> nat_mod_zero -> is_infinity (a *' generator) = false.
 Proof.
 Admitted.
