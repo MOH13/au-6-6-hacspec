@@ -54,6 +54,30 @@ fn test_add_negatives_gives_infty() {
 }
 
 #[test]
+fn test_point_addition_gives_new_point_on_curve() {
+    fn helper(p: AffineGenerator, q: AffineGenerator) -> bool {
+        let p = p.into();
+        let q = q.into();
+        let r = add_points(p, q);
+        is_point_on_curve(r)
+    }
+    QuickCheck::new()
+        .tests(5)
+        .quickcheck(helper as fn(AffineGenerator, AffineGenerator) -> bool);
+}
+#[test]
+fn test_point_doubling_gives_new_point_on_curve() {
+    fn helper(p: AffineGenerator) -> bool {
+        let p = p.into();
+        let q = double_point(p);
+        is_point_on_curve(q)
+    }
+    QuickCheck::new()
+        .tests(5)
+        .quickcheck(helper as fn(AffineGenerator) -> bool);
+}
+
+#[test]
 fn test_negative_infty_gives_infty() {
     let res = neg_point(INFINITY());
     assert!(res == INFINITY())
@@ -62,6 +86,11 @@ fn test_negative_infty_gives_infty() {
 #[test]
 fn base_point_on_curve() {
     assert!(is_point_on_curve(GENERATOR()))
+}
+
+#[test]
+fn infinity_on_curve() {
+    assert!(is_point_on_curve(INFINITY()))
 }
 
 #[test]
