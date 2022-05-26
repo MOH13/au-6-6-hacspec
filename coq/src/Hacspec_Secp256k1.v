@@ -282,8 +282,8 @@ Proof.
   intuition.
 Qed.
 
-Notation "p '+'' q" := (add_points p q) (at level 5, left associativity).
-Notation "k '*'' p" := (scalar_multiplication k p) (at level 4, right associativity).
+Notation "p '+'' q" := (add_points p q) (at level 69, left associativity).
+Notation "k '*'' p" := (scalar_multiplication k p) (at level 68, right associativity).
 
 Section nat_mod.
 
