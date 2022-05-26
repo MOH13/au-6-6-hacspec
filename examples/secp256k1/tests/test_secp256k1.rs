@@ -126,14 +126,9 @@ fn test_distributive_scalar_multiplication() {
 fn test_generated_points_on_curve() {
     fn helper(p: AffineGenerator) -> TestResult {
         let p = p.into();
-        if is_infinity(p) {
-            return TestResult::discard()
-        }
         TestResult::from_bool(is_point_on_curve(p))
     }
     QuickCheck::new()
         .tests(5)
-        .min_tests_passed(4)
-        .max_tests(10)
         .quickcheck(helper as fn(AffineGenerator) -> TestResult);
 }
