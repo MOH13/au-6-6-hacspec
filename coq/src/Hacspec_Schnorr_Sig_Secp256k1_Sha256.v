@@ -87,7 +87,9 @@ Proof.
   split.
   - split.
     + rewrite HeqA.
-      rewrite (scalar_mult_assoc2 H a generator).
+      remember (mkoncurve generator generator_on_curve) as g.
+      assert (generator = point g) as ->. { rewrite Heqg. reflexivity. }
+      rewrite (scalar_mult_assoc2 H a g).
       rewrite scalar_mult_distributivity.
       assert (v = ((v -% (a *% H)) +% (H *% a))). {
         unfold secp256k1_scalar_t in v, a, H.
@@ -96,9 +98,10 @@ Proof.
       }
       rewrite <- H2.
       rewrite HeqV, eqb_leibniz.
+      rewrite Heqg.
       reflexivity.
     + remember (mkoncurve generator generator_on_curve) as g.
-      pose proof scalar_mult_closure g a.
+      pose proof scalar_mult_closed g a.
       destruct H2.
       rewrite Heqg in H2.
       simpl in H2.
@@ -108,7 +111,6 @@ Proof.
       exact H3.
   - pose proof scalar_mult_generator_not_zero a H0.
     rewrite <- HeqA in H2.
-    unfold negb.
     rewrite H2.
     reflexivity.
 Qed.
