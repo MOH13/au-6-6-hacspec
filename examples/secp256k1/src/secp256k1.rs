@@ -162,6 +162,9 @@ fn product_sum(elems: &Seq<(Secp256k1Scalar, Affine)>) -> Affine {
 /// Calculates the sum a_1 * P_1 + ... + a_i * P_i + ... + A_m * P_m efficiently.
 pub fn batch_scalar_multiplication(elems: &Seq<(Secp256k1Scalar, Affine)>) -> Affine {
     //Should do some sorting in the beginning
+    /*let mut vec = elems.native_slice().to_vec();
+    vec.sort_unstable_by(|a, b| b.0.cmp(&a.0));
+    let elems = &Seq::from_vec(vec);*/
     let optimized = batch_scalar_optimization(elems);
     product_sum(&optimized)
 }
