@@ -4,10 +4,9 @@ This is a fork of the [hacspec](https://github.com/hacspec/hacspec) repository. 
 
 ## Setup
 
-To set up hacspec, follow the [documentation](https://github.com/hacspec/hacspec) found in the main hacspec repository.
+To set up hacspec, follow the documentation at [https://github.com/hacspec/hacspec](https://github.com/hacspec/hacspec).
 
-To set up Coq, follow the [documentation](https://github.com/hacspec/hacspec/tree/master/coq) found in the main hacspec repository.
-
+To set up Coq, follow the documentation at [https://github.com/hacspec/hacspec/tree/master/coq](https://github.com/hacspec/hacspec/tree/master/coq).
 ## Documentation
 
 Visit the [Github Pages](https://moh13.github.io/au-6-6-hacspec/) site for documentation.
