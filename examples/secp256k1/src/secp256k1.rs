@@ -1,6 +1,6 @@
 //! An implementation of the secp256k1 curve in the [hacspec](https://github.com/hacspec/hacspec) specification language.
 //! 
-//! Many properties of this library have been proven in !INSERT LINK!.
+//! Many properties of this library have been proven in [Hacspec_Secp256k1](https://github.com/MOH13/au-6-6-hacspec/blob/main/coq/src/Hacspec_Secp256k1.v) [(documentation)](../../coq/Hacspec_Secp256k1.html).
 
 use hacspec_lib::*;
 
