@@ -1,6 +1,6 @@
 # au-6-6-hacspec
 
-This is a fork of the [hacspec](https://github.com/hacspec/hacspec) repository. This fork adds two modules [`hacspec-secp256k1`](https://gitlab.au.dk/au648318/au-6-6-hacspec/-/tree/main/examples/secp256k1) and [`hacspec-schnorr-sig-secp256k1-sha256`](https://gitlab.au.dk/au648318/au-6-6-hacspec/-/tree/main/examples/schnorr-sig-secp256k1-sha256).
+This is a fork of the [hacspec](https://github.com/hacspec/hacspec) repository. This fork adds two modules [`hacspec-secp256k1`](examples/secp256k1) and [`hacspec-schnorr-sig-secp256k1-sha256`](examples/schnorr-sig-secp256k1-sha256).
 
 ## Documentation
 
