@@ -2,6 +2,12 @@
 
 This is a fork of the [hacspec](https://github.com/hacspec/hacspec) repository. This fork adds two modules [`hacspec-secp256k1`](examples/secp256k1) and [`hacspec-schnorr-sig-secp256k1-sha256`](examples/schnorr-sig-secp256k1-sha256).
 
+## Setup
+
+To set up hacspec, follow the [documentation](https://github.com/hacspec/hacspec) found in the main hacspec repository.
+
+To set up Coq, follow the [documentation](https://github.com/hacspec/hacspec/tree/master/coq) found in the main hacspec repository.
+
 ## Documentation
 
 Visit the [Github Pages](https://moh13.github.io/au-6-6-hacspec/) site for documentation.
