@@ -1209,7 +1209,6 @@ Qed.
 Lemma add_comm: forall (p q : on_curve_t), add_points p q = add_points q p.
 Proof.
   intros p q.
-  Set Printing All.
   unfold add_points.
   unfold nat_mod_val.
   destruct (is_infinity p) eqn:eq1. {
@@ -1426,7 +1425,7 @@ Qed.
 Fixpoint simple_scalar_mult (k : nat) (p : affine_t) : affine_t :=
   match k with
   | 0%nat => infinity
-  | S k1  => (simple_scalar_mult (k1) p) +' p
+  | S k1  => (simple_scalar_mult k1 p) +' p
   end.
 
 Lemma double_point_closed: forall (p : on_curve_t), exists (r : on_curve_t), point r = double_point (point p).
