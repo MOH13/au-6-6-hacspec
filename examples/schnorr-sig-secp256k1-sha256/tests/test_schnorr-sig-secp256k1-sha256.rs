@@ -11,7 +11,7 @@ include!("../../secp256k1/tests/secp256k1_generators.txt");
 
 #[test]
 #[allow(non_snake_case)]
-fn test_lots_of_tests() {
+fn test_signatures() {
   fn helper(a: Secp256k1ScalarGenerator, v: Secp256k1ScalarGenerator, m: Vec<u8>) -> TestResult {
     let a = a.into();
     let v = v.into(); 
