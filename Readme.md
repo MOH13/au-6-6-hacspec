@@ -4,9 +4,13 @@ This is a fork of the [hacspec](https://github.com/hacspec/hacspec) repository. 
 
 ## Documentation
 
-Documentation can be found at:
-- **hacspec implementation:** `todo`
-- **Coq proofs:** `todo`
+Visit the [Github Pages](https://moh13.github.io/au-6-6-hacspec/) site for documentation.
+
+## Credit
+
+This is the project for the Bachelor's thesis of the Aarhus University students:
+- Mads Overgård Henningsen
+- Viktor Salling
 
 The old README can be seen below.
 
