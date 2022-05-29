@@ -319,8 +319,8 @@ This file was automatically generated using Hacspec
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">zero_less_than_scalar_max</span>: 0 &lt; <span class="id" title="var">scalar_max</span>.<br/>
 
 <br/>
-<span class="id" title="keyword">Notation</span> &quot;p '+'' q" := (<span class="id" title="var">add_points</span> <span class="id" title="var">p</span> <span class="id" title="var">q</span>) (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 5, <span class="id" title="tactic">left</span> <span class="id" title="keyword">associativity</span>).<br/>
-<span class="id" title="keyword">Notation</span> &quot;k '*'' p" := (<span class="id" title="var">scalar_multiplication</span> <span class="id" title="var">k</span> <span class="id" title="var">p</span>) (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 4, <span class="id" title="tactic">right</span> <span class="id" title="keyword">associativity</span>).<br/>
+<span class="id" title="keyword">Notation</span> &quot;p '+'' q" := (<span class="id" title="var">add_points</span> <span class="id" title="var">p</span> <span class="id" title="var">q</span>) (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 69, <span class="id" title="tactic">left</span> <span class="id" title="keyword">associativity</span>).<br/>
+<span class="id" title="keyword">Notation</span> &quot;k '*'' p" := (<span class="id" title="var">scalar_multiplication</span> <span class="id" title="var">k</span> <span class="id" title="var">p</span>) (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 68, <span class="id" title="tactic">right</span> <span class="id" title="keyword">associativity</span>).<br/>
 
 <br/>
 <span class="id" title="keyword">Section</span> <span class="id" title="var">nat_mod</span>.<br/>
@@ -480,8 +480,6 @@ This file was automatically generated using Hacspec
 
 <br/>
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">neg_symm</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> <span class="id" title="var">q</span> : <span class="id" title="var">affine_t</span>), <span class="id" title="var">neg_point</span> <span class="id" title="var">p</span> = <span class="id" title="var">q</span> ↔ <span class="id" title="var">p</span> = <span class="id" title="var">neg_point</span> <span class="id" title="var">q</span>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="keyword">Search</span> (?<span class="id" title="var">a</span> → ?<span class="id" title="var">b</span> → ?<span class="id" title="var">a</span> ∧ ?<span class="id" title="var">b</span>).<br/>
-<span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">neg_symm_bool</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> <span class="id" title="var">q</span> : <span class="id" title="var">affine_t</span>), <span class="id" title="var">neg_point</span> <span class="id" title="var">p</span> =.? <span class="id" title="var">q</span> = <span class="id" title="var">p</span> =.? <span class="id" title="var">neg_point</span>(<span class="id" title="var">q</span>).<br/>
@@ -507,14 +505,10 @@ This file was automatically generated using Hacspec
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">add_infty_1</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span>: <span class="id" title="var">affine_t</span>), <span class="id" title="var">infinity</span> +' <span class="id" title="var">p</span> = <span class="id" title="var">p</span>.<br/>
 
 <br/>
-<span class="id" title="keyword">Lemma</span> <span class="id" title="var">double_point_preserves_infinity</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> : <span class="id" title="var">affine_t</span>), <span class="id" title="var">is_infinity</span> <span class="id" title="var">p</span> = <span class="id" title="var">is_infinity</span> (<span class="id" title="var">double_point</span> <span class="id" title="var">p</span>).<br/>
-
-<br/>
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">add_different_comm</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> <span class="id" title="var">q</span> : <span class="id" title="var">affine_t</span>), (<span class="id" title="var">fst</span> <span class="id" title="var">p</span> ≠ <span class="id" title="var">fst</span> <span class="id" title="var">q</span>) → <span class="id" title="var">add_different_points</span> <span class="id" title="var">p</span> <span class="id" title="var">q</span> = <span class="id" title="var">add_different_points</span> <span class="id" title="var">q</span> <span class="id" title="var">p</span>.<br/>
 
 <br/>
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">add_comm</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> <span class="id" title="var">q</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="var">add_points</span> <span class="id" title="var">p</span> <span class="id" title="var">q</span> = <span class="id" title="var">add_points</span> <span class="id" title="var">q</span> <span class="id" title="var">p</span>.<br/>
-&nbsp;&nbsp;<span class="id" title="keyword">Set Printing All</span>.<br/>
      
 <br/>
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">add_infty_2</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span>: <span class="id" title="var">affine_t</span>), <span class="id" title="var">p</span> +' <span class="id" title="var">infinity</span> = <span class="id" title="var">p</span>.<br/>
@@ -532,7 +526,7 @@ This file was automatically generated using Hacspec
 <span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">simple_scalar_mult</span> (<span class="id" title="var">k</span> : <span class="id" title="var">nat</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">affine_t</span>) : <span class="id" title="var">affine_t</span> :=<br/>
 &nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">k</span> <span class="id" title="keyword">with</span><br/>
 &nbsp;&nbsp;| 0%<span class="id" title="var">nat</span> ⇒ <span class="id" title="var">infinity</span><br/>
-&nbsp;&nbsp;| <span class="id" title="var">S</span> <span class="id" title="var">k1</span>  ⇒ (<span class="id" title="var">simple_scalar_mult</span> (<span class="id" title="var">k1</span>) <span class="id" title="var">p</span>) +' <span class="id" title="var">p</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">S</span> <span class="id" title="var">k1</span>  ⇒ (<span class="id" title="var">simple_scalar_mult</span> <span class="id" title="var">k1</span> <span class="id" title="var">p</span>) +' <span class="id" title="var">p</span><br/>
 &nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
 
 <br/>
@@ -677,12 +671,6 @@ This file was automatically generated using Hacspec
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">foldi_helper_zero</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">k</span> : <span class="id" title="var">secp256k1_scalar_t</span>) <span class="id" title="var">p</span> <span class="id" title="var">i</span> <span class="id" title="var">acc</span>, <span class="id" title="var">val</span> <span class="id" title="var">_</span> <span class="id" title="var">k</span> = 0 → <span class="id" title="var">scalar_mult_foldi_helper</span> <span class="id" title="var">k</span> <span class="id" title="var">p</span> <span class="id" title="var">i</span> <span class="id" title="var">acc</span> = <span class="id" title="var">double_point</span> <span class="id" title="var">acc</span>.<br/>
 
 <br/>
-<span class="id" title="keyword">Lemma</span> <span class="id" title="var">max_unsigned32</span> : @<span class="id" title="var">max_unsigned</span> <span class="id" title="var">WORDSIZE32</span> = 4294967295.<br/>
- 
-<br/>
-<span class="id" title="keyword">Lemma</span> <span class="id" title="var">modulus32</span> : @<span class="id" title="var">modulus</span> <span class="id" title="var">WORDSIZE32</span> = 4294967296.<br/>
- 
-<br/>
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">scalar_mult_zero</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">k</span> : <span class="id" title="var">secp256k1_scalar_t</span>) <span class="id" title="var">p</span>, <span class="id" title="var">val</span> <span class="id" title="var">_</span> <span class="id" title="var">k</span> = 0 → <span class="id" title="var">k</span> *' <span class="id" title="var">p</span> = <span class="id" title="var">infinity</span>.<br/>
 
 <br/>
@@ -690,9 +678,6 @@ This file was automatically generated using Hacspec
 
 <br/>
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">usize_sub_helper</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">n</span>, <span class="id" title="var">usize</span> (<span class="id" title="var">usize</span> 256 - <span class="id" title="var">n</span>) = <span class="id" title="var">usize</span> (256 - <span class="id" title="var">n</span>).<br/>
-
-<br/>
-<span class="id" title="keyword">Lemma</span> <span class="id" title="var">usize_sub_helper2</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">n</span> <span class="id" title="var">m</span>, 0 ≤ <span class="id" title="var">n</span> ≤ 256 → 0 ≤ <span class="id" title="var">m</span> ≤ 256 → <span class="id" title="var">usize</span>(<span class="id" title="var">usize</span> <span class="id" title="var">n</span> - <span class="id" title="var">usize</span> <span class="id" title="var">m</span>) = <span class="id" title="var">usize</span> (<span class="id" title="var">n</span> - <span class="id" title="var">m</span>).<br/>
 
 <br/>
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">scalar_mult_foldi_skip_leading_zeros</span>:<br/>
@@ -745,9 +730,6 @@ This file was automatically generated using Hacspec
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">scalar_mult_assoc2</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">a</span> <span class="id" title="var">b</span> : <span class="id" title="var">secp256k1_scalar_t</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="var">a</span> *' <span class="id" title="var">b</span> *' <span class="id" title="var">p</span> = (<span class="id" title="var">a</span> *% <span class="id" title="var">b</span>) *' <span class="id" title="var">p</span>.<br/>
 
 <br/>
-<span class="id" title="keyword">Lemma</span> <span class="id" title="var">scalar_mult_generator_zero</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">a</span> : <span class="id" title="var">secp256k1_scalar_t</span>), <span class="id" title="var">a</span> = <span class="id" title="var">nat_mod_zero</span> ↔ <span class="id" title="var">is_infinity</span> (<span class="id" title="var">a</span> *' <span class="id" title="var">generator</span>) = <span class="id" title="var">true</span>.<br/>
-
-<br/>
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">scalar_mult_generator_not_zero</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">a</span> : <span class="id" title="var">secp256k1_scalar_t</span>), <span class="id" title="var">a</span> ≠ <span class="id" title="var">nat_mod_zero</span> → <span class="id" title="var">is_infinity</span> (<span class="id" title="var">a</span> *' <span class="id" title="var">generator</span>) = <span class="id" title="var">false</span>.<br/>
 
 <br/>
@@ -796,8 +778,6 @@ This file was automatically generated using Hacspec
 <br/>
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">on_curve_list_to_affines_length2</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">a</span> <span class="id" title="var">b</span> (<span class="id" title="var">elems</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">on_curve_t</span>)),<br/>
 &nbsp;&nbsp;<span class="id" title="var">seq_len</span> (<span class="id" title="var">a</span> :: <span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>) = <span class="id" title="var">seq_len</span> (<span class="id" title="var">b</span> :: <span class="id" title="var">elems</span>).<br/>
-&nbsp;&nbsp;<span class="id" title="keyword">Search</span> (<span class="id" title="var">S</span> ?<span class="id" title="var">a</span> = <span class="id" title="var">S</span> ?<span class="id" title="var">b</span> ↔ ?<span class="id" title="var">a</span> = ?<span class="id" title="var">b</span>).<br/>
-<span class="id" title="keyword">Qed</span>.<br/>
 
 <br/>
 
@@ -892,19 +872,22 @@ This file was automatically generated using Hacspec
 <br/>
 
 <br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">batch_scalar_optimization_induction_helper</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">elems</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">on_curve_t</span>)),<br/>
+&nbsp;&nbsp;<span class="id" title="var">simple_batch_scalar_multiplication</span> (<span class="id" title="var">batch_scalar_optimization</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>)) = <span class="id" title="var">simple_batch_scalar_multiplication</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>)<br/>
+&nbsp;&nbsp;∧  <span class="id" title="var">length</span> (<span class="id" title="var">batch_scalar_optimization</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>)) = <span class="id" title="var">length</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>)<br/>
+&nbsp;&nbsp;∧ <span class="id" title="tactic">∃</span> <span class="id" title="var">elems2</span>, <span class="id" title="var">batch_scalar_optimization</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>) = <span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems2</span>.<br/>
+
+<br/>
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">batch_scalar_optimization_eq</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">elems</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">on_curve_t</span>)),<br/>
-&nbsp;&nbsp;<span class="id" title="var">simple_batch_scalar_multiplication</span> (<span class="id" title="var">batch_scalar_optimization</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>)) = <span class="id" title="var">simple_batch_scalar_multiplication</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>).<br/>
+<span class="id" title="var">simple_batch_scalar_multiplication</span> (<span class="id" title="var">batch_scalar_optimization</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>)) = <span class="id" title="var">simple_batch_scalar_multiplication</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>).<br/>
 
 <br/>
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">batch_scalar_opt_length</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">l</span>,<br/>
-&nbsp;&nbsp;<span class="id" title="var">seq_len</span> (<span class="id" title="var">batch_scalar_optimization</span> <span class="id" title="var">l</span>) = <span class="id" title="var">seq_len</span> <span class="id" title="var">l</span>.<br/>
+&nbsp;&nbsp;<span class="id" title="var">seq_len</span> (<span class="id" title="var">batch_scalar_optimization</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">l</span>)) = <span class="id" title="var">seq_len</span> <span class="id" title="var">l</span>.<br/>
 
 <br/>
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">batch_scalar_opt_on_curve_list_to_affines</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">l</span>,<br/>
 &nbsp;&nbsp;<span class="id" title="tactic">∃</span> <span class="id" title="var">l2</span>, <span class="id" title="var">batch_scalar_optimization</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">l</span>) = <span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">l2</span>.<br/>
-
-<br/>
-<span class="id" title="keyword">Lemma</span> <span class="id" title="var">wordsize32_eq</span>: @<span class="id" title="var">wordsize</span> <span class="id" title="var">WORDSIZE32</span> = 32.<br/>
 
 <br/>
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">batch_scalar_mult_def</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">elems</span> :  <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">on_curve_t</span>)),<br/>

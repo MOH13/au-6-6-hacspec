@@ -1,0 +1,106 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link href="coqdoc.css" rel="stylesheet" type="text/css" />
+<title>Hacspec_Schnorr_Sig_Secp256k1_Sha256</title>
+</head>
+
+<body>
+
+<div id="page">
+
+<div id="header">
+</div>
+
+<div id="main">
+
+<h1 class="libtitle">Library Hacspec_Schnorr_Sig_Secp256k1_Sha256</h1>
+
+<div class="code">
+</div>
+
+<div class="doc">
+This file was automatically generated using Hacspec 
+</div>
+<div class="code">
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Hacspec_Lib</span> <span class="id" title="var">MachineIntegers</span>.<br/>
+<span class="id" title="keyword">From</span> <span class="id" title="var">Coq</span> <span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">ZArith</span>.<br/>
+<span class="id" title="keyword">Import</span> <span class="id" title="var">List.ListNotations</span>.<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">Z_scope</span>.<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">bool_scope</span>.<br/>
+<span class="id" title="keyword">Open</span> <span class="id" title="keyword">Scope</span> <span class="id" title="var">hacspec_scope</span>.<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Hacspec_Lib</span> <span class="id" title="var">Field</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Hacspec_Secp256k1</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Require</span> <span class="id" title="keyword">Import</span> <span class="id" title="var">Hacspec_Sha256</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Add</span> <span class="id" title="var">Field</span> <span class="id" title="var">field_elem_FZpZ</span> : <span class="id" title="var">field_elem_FZpZ</span>.<br/>
+<span class="id" title="keyword">Add</span> <span class="id" title="var">Field</span> <span class="id" title="var">scalar_FZpZ</span> : <span class="id" title="var">scalar_FZpZ</span>.<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">sign</span><br/>
+&nbsp;&nbsp;(<span class="id" title="var">a_0</span> : <span class="id" title="var">secp256k1_scalar_t</span>)<br/>
+&nbsp;&nbsp;(<span class="id" title="var">a_1</span> : <span class="id" title="var">affine_t</span>)<br/>
+&nbsp;&nbsp;(<span class="id" title="var">v_2</span> : <span class="id" title="var">secp256k1_scalar_t</span>)<br/>
+&nbsp;&nbsp;(<span class="id" title="var">m_3</span> : <span class="id" title="var">byte_seq</span>)<br/>
+&nbsp;&nbsp;: (<span class="id" title="var">affine_t</span> × <span class="id" title="var">secp256k1_scalar_t</span>) :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">g_4</span> : (<span class="id" title="var">secp256k1_field_element_t</span> × <span class="id" title="var">secp256k1_field_element_t</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">generator</span>  <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> '(<span class="id" title="var">vx_5</span>, <span class="id" title="var">vy_6</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">scalar_multiplication</span> (<span class="id" title="var">v_2</span>) (<span class="id" title="var">g_4</span>) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> '(<span class="id" title="var">ax_7</span>, <span class="id" title="var">ay_8</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">a_1</span> <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">c_9</span> : <span class="id" title="var">sha256_digest_t</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">hash</span> (<span class="id" title="var">seq_concat</span> (<span class="id" title="var">nat_mod_to_byte_seq_le</span> (<span class="id" title="var">vx_5</span>)) (<span class="id" title="var">seq_concat</span> (<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">nat_mod_to_byte_seq_le</span> (<span class="id" title="var">vy_6</span>)) (<span class="id" title="var">seq_concat</span> (<span class="id" title="var">nat_mod_to_byte_seq_le</span> (<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">ax_7</span>)) (<span class="id" title="var">seq_concat</span> (<span class="id" title="var">nat_mod_to_byte_seq_le</span> (<span class="id" title="var">ay_8</span>)) (<span class="id" title="var">m_3</span>))))) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">c_as_scalar_10</span> : <span class="id" title="var">secp256k1_scalar_t</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">nat_mod_from_byte_seq_le</span> (<span class="id" title="var">c_9</span>) : <span class="id" title="var">secp256k1_scalar_t</span> <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">r_11</span> : <span class="id" title="var">secp256k1_scalar_t</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id" title="var">v_2</span>) -% ((<span class="id" title="var">a_0</span>) *% (<span class="id" title="var">c_as_scalar_10</span>)) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;((<span class="id" title="var">vx_5</span>, <span class="id" title="var">vy_6</span>), <span class="id" title="var">r_11</span>).<br/>
+
+<br/>
+<span class="id" title="keyword">Definition</span> <span class="id" title="var">verify</span><br/>
+&nbsp;&nbsp;(<span class="id" title="var">a_12</span> : <span class="id" title="var">affine_t</span>)<br/>
+&nbsp;&nbsp;(<span class="id" title="var">m_13</span> : <span class="id" title="var">byte_seq</span>)<br/>
+&nbsp;&nbsp;(<span class="id" title="var">signature_14</span> : (<span class="id" title="var">affine_t</span> × <span class="id" title="var">secp256k1_scalar_t</span>))<br/>
+&nbsp;&nbsp;: <span class="id" title="var">bool</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> '(<span class="id" title="var">v_15</span>, <span class="id" title="var">r_16</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">signature_14</span> <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">g_17</span> : (<span class="id" title="var">secp256k1_field_element_t</span> × <span class="id" title="var">secp256k1_field_element_t</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">generator</span>  <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> '(<span class="id" title="var">vx_18</span>, <span class="id" title="var">vy_19</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">v_15</span> <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> '(<span class="id" title="var">ax_20</span>, <span class="id" title="var">ay_21</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">a_12</span> <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">c_22</span> : <span class="id" title="var">sha256_digest_t</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">hash</span> (<span class="id" title="var">seq_concat</span> (<span class="id" title="var">nat_mod_to_byte_seq_le</span> (<span class="id" title="var">vx_18</span>)) (<span class="id" title="var">seq_concat</span> (<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">nat_mod_to_byte_seq_le</span> (<span class="id" title="var">vy_19</span>)) (<span class="id" title="var">seq_concat</span> (<span class="id" title="var">nat_mod_to_byte_seq_le</span> (<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">ax_20</span>)) (<span class="id" title="var">seq_concat</span> (<span class="id" title="var">nat_mod_to_byte_seq_le</span> (<span class="id" title="var">ay_21</span>)) (<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">m_13</span>))))) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">c_as_scalar_23</span> : <span class="id" title="var">secp256k1_scalar_t</span> :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">nat_mod_from_byte_seq_le</span> (<span class="id" title="var">c_22</span>) : <span class="id" title="var">secp256k1_scalar_t</span> <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">gr_24</span> : (<span class="id" title="var">secp256k1_field_element_t</span> × <span class="id" title="var">secp256k1_field_element_t</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">scalar_multiplication</span> (<span class="id" title="var">r_16</span>) (<span class="id" title="var">g_17</span>) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;<span class="id" title="keyword">let</span> <span class="id" title="var">c_a_25</span> : (<span class="id" title="var">secp256k1_field_element_t</span> × <span class="id" title="var">secp256k1_field_element_t</span>) :=<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">scalar_multiplication</span> (<span class="id" title="var">c_as_scalar_23</span>) (<span class="id" title="var">a_12</span>) <span class="id" title="tactic">in</span> <br/>
+&nbsp;&nbsp;(((<span class="id" title="var">v_15</span>) =.? (<span class="id" title="var">add_points</span> (<span class="id" title="var">gr_24</span>) (<span class="id" title="var">c_a_25</span>))) &amp;&amp; (<span class="id" title="var">is_point_on_curve</span> (<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">a_12</span>))) &amp;&amp; (<span class="id" title="var">negb</span> (<span class="id" title="var">is_infinity</span> (<span class="id" title="var">a_12</span>))).<br/>
+
+<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">schnorr_correctness</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">a</span> <span class="id" title="var">v</span> : <span class="id" title="var">secp256k1_scalar_t</span>) (<span class="id" title="var">m</span> : <span class="id" title="var">byte_seq</span>), <span class="id" title="var">a</span> ≠ <span class="id" title="var">nat_mod_zero</span> ∧ <span class="id" title="var">v</span> ≠ <span class="id" title="var">nat_mod_zero</span> → <span class="id" title="var">verify</span> (<span class="id" title="var">a</span> *' <span class="id" title="var">generator</span>) <span class="id" title="var">m</span> (<span class="id" title="var">sign</span> <span class="id" title="var">a</span> (<span class="id" title="var">a</span> *' <span class="id" title="var">generator</span>) <span class="id" title="var">v</span> <span class="id" title="var">m</span>) =  <span class="id" title="var">true</span>.<br/>
+</div>
+<hr/>This page has been generated by <a href="http://coq.inria.fr/">coqdoc</a>
+</div>
+
+</div>
+
+</body>
+</html>
