@@ -1,1 +1,0 @@
-initSidebarItems({"fn":[["scalarmult",""],["secret_to_public",""]],"struct":[["FieldCanvas",""],["FieldElement",""],["Scalar",""],["ScalarCanvas",""],["SerializedPoint","Fixed length byte array."],["SerializedScalar","Fixed length byte array."]]});
