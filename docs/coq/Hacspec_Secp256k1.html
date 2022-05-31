@@ -41,6 +41,24 @@ This file was automatically generated using Hacspec
 <span class="id" title="keyword">From</span> <span class="id" title="var">Coqprime</span> <span class="id" title="keyword">Require</span> <span class="id" title="var">GZnZ</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+
+<div class="paragraph"> </div>
+
+This file contains the coq export of the hacspec-secp256k1 implementation and its corresponding proofs.
+
+<div class="paragraph"> </div>
+
+<a id="lab1"></a><h1 class="section">hacspec-to-coq definitions</h1>
+
+<div class="paragraph"> </div>
+
+<a id="lab2"></a><h2 class="section">Main curve implementation</h2>
+
+</div>
+<div class="code">
 
 <br/>
 <span class="id" title="keyword">Definition</span> <span class="id" title="var">elem_max</span> := 0<span class="id" title="var">xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F</span>.<br/>
@@ -261,6 +279,15 @@ This file was automatically generated using Hacspec
 &nbsp;&nbsp;<span class="id" title="var">q_32</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+<a id="lab3"></a><h2 class="section">Batch scalar multiplication</h2>
+
+</div>
+<div class="code">
+
+<br/>
 <span class="id" title="keyword">Definition</span> <span class="id" title="var">batch_scalar_optimization</span><br/>
 &nbsp;&nbsp;(<span class="id" title="var">elems_34</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">affine_t</span>))<br/>
 &nbsp;&nbsp;: <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">affine_t</span>) :=<br/>
@@ -313,14 +340,26 @@ This file was automatically generated using Hacspec
 &nbsp;&nbsp;<span class="id" title="var">product_sum</span> (<span class="id" title="var">optimized_47</span>).<br/>
 
 <br/>
-<span class="id" title="keyword">Lemma</span> <span class="id" title="var">zero_less_than_elem_max</span>: 0 &lt; <span class="id" title="var">elem_max</span>.<br/>
+</div>
 
-<br/>
-<span class="id" title="keyword">Lemma</span> <span class="id" title="var">zero_less_than_scalar_max</span>: 0 &lt; <span class="id" title="var">scalar_max</span>.<br/>
+<div class="doc">
+<a id="lab4"></a><h1 class="section">Notation</h1>
+
+</div>
+<div class="code">
 
 <br/>
 <span class="id" title="keyword">Notation</span> &quot;p '+'' q" := (<span class="id" title="var">add_points</span> <span class="id" title="var">p</span> <span class="id" title="var">q</span>) (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 69, <span class="id" title="tactic">left</span> <span class="id" title="keyword">associativity</span>).<br/>
 <span class="id" title="keyword">Notation</span> &quot;k '*'' p" := (<span class="id" title="var">scalar_multiplication</span> <span class="id" title="var">k</span> <span class="id" title="var">p</span>) (<span class="id" title="tactic">at</span> <span class="id" title="keyword">level</span> 68, <span class="id" title="tactic">right</span> <span class="id" title="keyword">associativity</span>).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab5"></a><h1 class="section">Nat_mod properties</h1>
+
+</div>
+<div class="code">
 
 <br/>
 <span class="id" title="keyword">Section</span> <span class="id" title="var">nat_mod</span>.<br/>
@@ -336,13 +375,29 @@ This file was automatically generated using Hacspec
 <span class="id" title="keyword">Add</span> <span class="id" title="var">Field</span> <span class="id" title="var">FZpZ</span> : (<span class="id" title="var">GZnZ.FZpZ</span> <span class="id" title="var">max</span> <span class="id" title="var">max_prime</span>).<br/>
 
 <br/>
-<span class="id" title="keyword">Theorem</span> <span class="id" title="var">max_pos</span>: 0 &lt; <span class="id" title="var">max</span>.<br/>
+<span class="id" title="keyword">Lemma</span> <span class="id" title="var">max_pos</span>: 0 &lt; <span class="id" title="var">max</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+<a id="lab6"></a><h2 class="section">Field properties</h2>
+ Proof of field properties of nat_mod (simple wrapper of GZnZ.znz) 
+</div>
+<div class="code">
 <span class="id" title="keyword">Definition</span> <span class="id" title="var">nat_mod_FZpZ</span>: <span class="id" title="var">field_theory</span> <span class="id" title="var">nat_mod_zero</span> <span class="id" title="var">nat_mod_one</span> <span class="id" title="var">nat_mod_add</span> <span class="id" title="var">nat_mod_mul</span> <span class="id" title="var">nat_mod_sub</span> <span class="id" title="var">nat_mod_neg</span> <span class="id" title="var">nat_mod_div</span> <span class="id" title="var">nat_mod_inv</span> (@<span class="id" title="var">Logic.eq</span> (<span class="id" title="var">nat_mod</span> <span class="id" title="var">max</span>)).<br/>
 
 <br/>
 <span class="id" title="keyword">Add</span> <span class="id" title="var">Field</span> <span class="id" title="var">nat_mod_FZpZ</span> : <span class="id" title="var">nat_mod_FZpZ</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab7"></a><h2 class="section">Nat_mod helper lemmas</h2>
+
+</div>
+<div class="code">
 
 <br/>
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">nat_mod_small</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">n</span> : <span class="id" title="var">nat_mod</span> <span class="id" title="var">max</span>), 0 ≤ <span class="id" title="var">n</span> &lt; <span class="id" title="var">max</span>.<br/>
@@ -390,10 +445,13 @@ This file was automatically generated using Hacspec
 <span class="id" title="keyword">End</span> <span class="id" title="var">nat_mod</span>.<br/>
 
 <br/>
-<span class="id" title="keyword">Section</span> <span class="id" title="var">uint_size</span>.<br/>
+</div>
 
-<br/>
-<span class="id" title="keyword">End</span> <span class="id" title="var">uint_size</span>.<br/>
+<div class="doc">
+<a id="lab8"></a><h1 class="section">foldi (for-loop) helper lemmas</h1>
+
+</div>
+<div class="code">
 
 <br/>
 <span class="id" title="keyword">Section</span> <span class="id" title="var">foldi</span>.<br/>
@@ -436,8 +494,28 @@ This file was automatically generated using Hacspec
 <span class="id" title="keyword">End</span> <span class="id" title="var">foldi</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+<a id="lab9"></a><h1 class="section">Field definitions</h1>
+
+<div class="paragraph"> </div>
+
+ p and n are prime (actual proofs needed) 
+</div>
+<div class="code">
+
+<br/>
 <span class="id" title="keyword">Axiom</span> <span class="id" title="var">elem_max_prime</span>: <span class="id" title="var">prime</span> <span class="id" title="var">elem_max</span>.<br/>
 <span class="id" title="keyword">Axiom</span> <span class="id" title="var">scalar_max_prime</span>: <span class="id" title="var">prime</span> <span class="id" title="var">scalar_max</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+Specialize field proof to the two concrete fields 
+</div>
+<div class="code">
 
 <br/>
 <span class="id" title="keyword">Definition</span> <span class="id" title="var">field_elem_FZpZ</span> := (<span class="id" title="var">nat_mod_FZpZ</span> <span class="id" title="var">elem_max</span> <span class="id" title="var">elem_max_prime</span>).<br/>
@@ -446,6 +524,19 @@ This file was automatically generated using Hacspec
 <br/>
 <span class="id" title="keyword">Add</span> <span class="id" title="var">Field</span> <span class="id" title="var">field_elem_FZpZ</span> : <span class="id" title="var">field_elem_FZpZ</span>.<br/>
 <span class="id" title="keyword">Add</span> <span class="id" title="var">Field</span> <span class="id" title="var">scalar_FZpZ</span> : <span class="id" title="var">scalar_FZpZ</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab10"></a><h1 class="section">Curve properties</h1>
+
+<div class="paragraph"> </div>
+
+<a id="lab11"></a><h2 class="section">General properties and helper lemmas</h2>
+
+</div>
+<div class="code">
 
 <br/>
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">field_elem_small</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">n</span> : <span class="id" title="var">secp256k1_field_element_t</span>), 0 ≤ <span class="id" title="var">n</span> &lt; <span class="id" title="var">elem_max</span>.<br/>
@@ -485,6 +576,15 @@ This file was automatically generated using Hacspec
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">neg_symm_bool</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> <span class="id" title="var">q</span> : <span class="id" title="var">affine_t</span>), <span class="id" title="var">neg_point</span> <span class="id" title="var">p</span> =.? <span class="id" title="var">q</span> = <span class="id" title="var">p</span> =.? <span class="id" title="var">neg_point</span>(<span class="id" title="var">q</span>).<br/>
    
 <br/>
+</div>
+
+<div class="doc">
+<a id="lab12"></a><h2 class="section">Proofs of closed operations</h2>
+
+</div>
+<div class="code">
+
+<br/>
 <span class="id" title="keyword">Structure</span> <span class="id" title="var">on_curve_t</span>: <span class="id" title="keyword">Set</span>:=<br/>
 &nbsp;<span class="id" title="var">mkoncurve</span> {<span class="id" title="var">point</span>: <span class="id" title="var">affine_t</span>;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">on_curve</span>: <span class="id" title="var">is_point_on_curve</span> <span class="id" title="var">point</span> = <span class="id" title="var">true</span> }.<br/>
@@ -496,6 +596,12 @@ This file was automatically generated using Hacspec
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">infty_on_curve</span>: <span class="id" title="var">is_point_on_curve</span> <span class="id" title="var">infinity</span> = <span class="id" title="var">true</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+Could not be completed since <span class="inlinecode"><span class="id" title="var">nat_mod_from_byte_seq_be</span></span> is not defined 
+</div>
+<div class="code">
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">generator_on_curve</span>: <span class="id" title="var">is_point_on_curve</span> <span class="id" title="var">generator</span> = <span class="id" title="var">true</span>.<br/>
 
 <br/>
@@ -517,17 +623,16 @@ This file was automatically generated using Hacspec
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">double_infty</span>: <span class="id" title="var">double_point</span> <span class="id" title="var">infinity</span> = <span class="id" title="var">infinity</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+Proofs of remaining cases missing 
+</div>
+<div class="code">
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">add_assoc</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> <span class="id" title="var">q</span> <span class="id" title="var">r</span> : <span class="id" title="var">on_curve_t</span>), (<span class="id" title="var">p</span> +' <span class="id" title="var">q</span>) +' <span class="id" title="var">r</span> = <span class="id" title="var">p</span> +' (<span class="id" title="var">q</span> +' <span class="id" title="var">r</span>).<br/>
    
 <br/>
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">add_to_double</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> : <span class="id" title="var">affine_t</span>), <span class="id" title="var">p</span> +' <span class="id" title="var">p</span> = <span class="id" title="var">double_point</span> <span class="id" title="var">p</span>.<br/>
-
-<br/>
-<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">simple_scalar_mult</span> (<span class="id" title="var">k</span> : <span class="id" title="var">nat</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">affine_t</span>) : <span class="id" title="var">affine_t</span> :=<br/>
-&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">k</span> <span class="id" title="keyword">with</span><br/>
-&nbsp;&nbsp;| 0%<span class="id" title="var">nat</span> ⇒ <span class="id" title="var">infinity</span><br/>
-&nbsp;&nbsp;| <span class="id" title="var">S</span> <span class="id" title="var">k1</span>  ⇒ (<span class="id" title="var">simple_scalar_mult</span> <span class="id" title="var">k1</span> <span class="id" title="var">p</span>) +' <span class="id" title="var">p</span><br/>
-&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
 
 <br/>
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">double_point_closed</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="tactic">∃</span> (<span class="id" title="var">r</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="var">point</span> <span class="id" title="var">r</span> = <span class="id" title="var">double_point</span> (<span class="id" title="var">point</span> <span class="id" title="var">p</span>).<br/>
@@ -538,6 +643,37 @@ This file was automatically generated using Hacspec
 <br/>
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">add_points_closed</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> <span class="id" title="var">q</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="tactic">∃</span> (<span class="id" title="var">r</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="var">point</span> <span class="id" title="var">r</span> = (<span class="id" title="var">point</span> <span class="id" title="var">p</span>) +' (<span class="id" title="var">point</span> <span class="id" title="var">q</span>).<br/>
     
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab13"></a><h1 class="section">Scalar multiplication proofs</h1>
+
+
+<div class="paragraph"> </div>
+
+General strategy to show equivalences:
+<span class="inlinecode"><span class="id" title="var">simple_scalar_mult</span></span> &lt;-&gt; <span class="inlinecode"><span class="id" title="var">simple_scalar_mult2</span></span> &lt;-&gt; <span class="inlinecode"><span class="id" title="var">simple_scalar_mult3</span></span> &lt;-&gt; <span class="inlinecode"><span class="id" title="var">scalar_multiplication</span></span>.
+
+<div class="paragraph"> </div>
+
+Missing equivalence proof between <span class="inlinecode"><span class="id" title="var">simple_scalar_mult3</span></span> and <span class="inlinecode"><span class="id" title="var">scalar_multiplication</span></span>.
+
+<div class="paragraph"> </div>
+
+
+<div class="paragraph"> </div>
+
+<a id="lab14"></a><h2 class="section">Simple scalar multiplication function 1</h2>
+
+</div>
+<div class="code">
+<span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">simple_scalar_mult</span> (<span class="id" title="var">k</span> : <span class="id" title="var">nat</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">affine_t</span>) : <span class="id" title="var">affine_t</span> :=<br/>
+&nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">k</span> <span class="id" title="keyword">with</span><br/>
+&nbsp;&nbsp;| 0%<span class="id" title="var">nat</span> ⇒ <span class="id" title="var">infinity</span><br/>
+&nbsp;&nbsp;| <span class="id" title="var">S</span> <span class="id" title="var">k1</span>  ⇒ (<span class="id" title="var">simple_scalar_mult</span> <span class="id" title="var">k1</span> <span class="id" title="var">p</span>) +' <span class="id" title="var">p</span><br/>
+&nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
+
 <br/>
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">simple_scalar_mult_closed</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> : <span class="id" title="var">on_curve_t</span>) (<span class="id" title="var">k</span> : <span class="id" title="var">nat</span>), <span class="id" title="tactic">∃</span> (<span class="id" title="var">q</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="var">point</span> <span class="id" title="var">q</span> = <span class="id" title="var">simple_scalar_mult</span> <span class="id" title="var">k</span> <span class="id" title="var">p</span>.<br/>
 
@@ -551,6 +687,13 @@ This file was automatically generated using Hacspec
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">simple_scalar_mult_fold</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">k</span> : <span class="id" title="var">nat</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">affine_t</span>), (<span class="id" title="var">simple_scalar_mult</span> <span class="id" title="var">k</span> <span class="id" title="var">p</span>) +' <span class="id" title="var">p</span> = <span class="id" title="var">simple_scalar_mult</span> (<span class="id" title="var">S</span> <span class="id" title="var">k</span>) <span class="id" title="var">p</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+<a id="lab15"></a><h2 class="section">Simple scalar multiplication function 2</h2>
+
+</div>
+<div class="code">
 <span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">simple_scalar_mult2</span> (<span class="id" title="var">k</span> : <span class="id" title="var">positive</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">affine_t</span>) : <span class="id" title="var">affine_t</span> :=<br/>
 &nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">k</span> <span class="id" title="keyword">with</span><br/>
 &nbsp;&nbsp;| <span class="id" title="var">xH</span> ⇒ <span class="id" title="var">p</span><br/>
@@ -562,6 +705,13 @@ This file was automatically generated using Hacspec
 <span class="id" title="keyword">Definition</span> <span class="id" title="var">bitlist</span> := <span class="id" title="var">list</span> <span class="id" title="var">bool</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+<a id="lab16"></a><h2 class="section">Simple scalar multiplication function 3</h2>
+
+</div>
+<div class="code">
 <span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">simple_scalar_mult3</span> (<span class="id" title="var">l</span> : <span class="id" title="var">bitlist</span>) (<span class="id" title="var">p</span> <span class="id" title="var">acc</span> : <span class="id" title="var">affine_t</span>) : <span class="id" title="var">affine_t</span> :=<br/>
 &nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">l</span> <span class="id" title="keyword">with</span><br/>
 &nbsp;&nbsp;| <span class="id" title="var">nil</span> ⇒ <span class="id" title="var">acc</span><br/>
@@ -697,6 +847,15 @@ This file was automatically generated using Hacspec
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">simple_scalar_mult3_def</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">k</span> : <span class="id" title="var">nat</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="var">simple_scalar_mult3</span> (<span class="id" title="var">z_to_bitlist</span> (<span class="id" title="var">Z.of_nat</span> <span class="id" title="var">k</span>)) <span class="id" title="var">p</span> <span class="id" title="var">infinity</span> = <span class="id" title="var">simple_scalar_mult</span> <span class="id" title="var">k</span> <span class="id" title="var">p</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+<a id="lab17"></a><h2 class="section"><span class="inlinecode"><span class="id" title="var">scalar_multiplication</span></span> equivalence with function 3 (incomplete)</h2>
+
+</div>
+<div class="code">
+
+<br/>
 <span class="id" title="keyword">Definition</span> <span class="id" title="var">nat_to_scalar</span> (<span class="id" title="var">n</span> : <span class="id" title="var">nat</span>) : <span class="id" title="var">secp256k1_scalar_t</span>.<br/>
 
 <br/>
@@ -712,6 +871,12 @@ This file was automatically generated using Hacspec
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">scalar_mult_def</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">k</span> : <span class="id" title="var">secp256k1_scalar_t</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">affine_t</span>), <span class="id" title="var">k</span> *' <span class="id" title="var">p</span> = <span class="id" title="var">simple_scalar_mult3</span> (<span class="id" title="var">z_to_bitlist</span> <span class="id" title="var">k</span>) <span class="id" title="var">p</span> <span class="id" title="var">infinity</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+Follows from Langrange's Theorem since the order of the group is prime 
+</div>
+<div class="code">
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">simple_scalar_mult_mod</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">k</span> : <span class="id" title="var">nat</span>) (<span class="id" title="var">p</span>: <span class="id" title="var">affine_t</span>), <span class="id" title="var">simple_scalar_mult</span> <span class="id" title="var">k</span> <span class="id" title="var">p</span> = <span class="id" title="var">simple_scalar_mult</span> (<span class="id" title="var">k</span> <span class="id" title="var">mod</span> (<span class="id" title="var">Z.to_nat</span> <span class="id" title="var">scalar_max</span>)) <span class="id" title="var">p</span>.<br/>
 
 <br/>
@@ -731,6 +896,15 @@ This file was automatically generated using Hacspec
 
 <br/>
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">scalar_mult_generator_not_zero</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">a</span> : <span class="id" title="var">secp256k1_scalar_t</span>), <span class="id" title="var">a</span> ≠ <span class="id" title="var">nat_mod_zero</span> → <span class="id" title="var">is_infinity</span> (<span class="id" title="var">a</span> *' <span class="id" title="var">generator</span>) = <span class="id" title="var">false</span>.<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab18"></a><h1 class="section">Batch scalar multiplication proofs</h1>
+
+</div>
+<div class="code">
 
 <br/>
 <span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">simple_batch_scalar_multiplication</span><br/>
@@ -758,6 +932,12 @@ This file was automatically generated using Hacspec
 &nbsp;&nbsp;<span class="id" title="keyword">end</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+Helper function converting a list of tuples of scalars and points on curve to list of tuples of scalars and corresponding points without the proof. 
+</div>
+<div class="code">
 <span class="id" title="keyword">Fixpoint</span> <span class="id" title="var">on_curve_list_to_affines</span> (<span class="id" title="var">elems</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">on_curve_t</span>)) : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">affine_t</span>) :=<br/>
 &nbsp;&nbsp;<span class="id" title="keyword">match</span> <span class="id" title="var">elems</span> <span class="id" title="keyword">with</span><br/>
 &nbsp;&nbsp;| (<span class="id" title="var">a</span>, <span class="id" title="var">P</span>) :: <span class="id" title="var">r</span> ⇒ (<span class="id" title="var">a</span>, <span class="id" title="var">point</span> <span class="id" title="var">P</span>) :: <span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">r</span><br/>
@@ -836,6 +1016,12 @@ This file was automatically generated using Hacspec
 &nbsp;&nbsp;<span class="id" title="var">foldi</span> (<span class="id" title="var">usize</span> 0) (<span class="id" title="var">seq_len</span> <span class="id" title="var">elems1</span>) (<span class="id" title="var">product_sum_foldi_helper</span> (<span class="id" title="var">elems1</span> ++ <span class="id" title="var">elems2</span>)) <span class="id" title="var">acc</span> = <span class="id" title="var">foldi</span> (<span class="id" title="var">usize</span> 0) (<span class="id" title="var">seq_len</span> <span class="id" title="var">elems1</span>) (<span class="id" title="var">product_sum_foldi_helper</span> <span class="id" title="var">elems1</span>) <span class="id" title="var">acc</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+Equivalence proof between <span class="inlinecode"><span class="id" title="var">product_sum</span></span> and <span class="inlinecode"><span class="id" title="var">simple_batch_scalar_multiplication</span></span>. 
+</div>
+<div class="code">
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">product_sum_def</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">elems</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">on_curve_t</span>)),<br/>
 &nbsp;&nbsp;0 ≤ <span class="id" title="var">seq_len</span> <span class="id" title="var">elems</span> ≤ @<span class="id" title="var">max_unsigned</span> <span class="id" title="var">WORDSIZE32</span> → <span class="id" title="var">product_sum</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>) = <span class="id" title="var">simple_batch_scalar_multiplication</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>).<br/>
 
@@ -855,23 +1041,53 @@ This file was automatically generated using Hacspec
 (<span class="id" title="var">new_elems_35</span>)).<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+Admitted since this it must be a pretty trivial property and proving it is outside the scope of this project. 
+</div>
+<div class="code">
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">seq_upd_length</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">A</span> : <span class="id" title="keyword">Type</span>) `{<span class="id" title="var">Default</span> <span class="id" title="var">A</span>} (<span class="id" title="var">l</span> : <span class="id" title="var">seq</span> <span class="id" title="var">A</span>) <span class="id" title="var">i</span> <span class="id" title="var">elem</span>, <span class="id" title="var">length</span> (<span class="id" title="var">seq_upd</span> <span class="id" title="var">l</span> <span class="id" title="var">i</span> <span class="id" title="var">elem</span>) = <span class="id" title="var">length</span> <span class="id" title="var">l</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+Admitted since this it must be a pretty trivial property and proving it is outside the scope of this project. 
+</div>
+<div class="code">
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">seq_upd_split</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">A</span> : <span class="id" title="keyword">Type</span>) `{<span class="id" title="var">Default</span> <span class="id" title="var">A</span>} (<span class="id" title="var">l1</span> <span class="id" title="var">l2</span> : <span class="id" title="var">seq</span> <span class="id" title="var">A</span>) <span class="id" title="var">elem</span>,<br/>
 &nbsp;&nbsp;<span class="id" title="var">seq_upd</span> (<span class="id" title="var">l1</span> ++ <span class="id" title="var">l2</span>) (<span class="id" title="var">length</span> <span class="id" title="var">l1</span>) <span class="id" title="var">elem</span> = <span class="id" title="var">l1</span> ++ (<span class="id" title="var">seq_upd</span> <span class="id" title="var">l2</span> 0 <span class="id" title="var">elem</span>).<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+Admitted since this it must be a pretty trivial property and proving it is outside the scope of this project. 
+</div>
+<div class="code">
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">seq_upd_zero</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">A</span> : <span class="id" title="keyword">Type</span>) `{<span class="id" title="var">Default</span> <span class="id" title="var">A</span>} <span class="id" title="var">a</span> <span class="id" title="var">l</span> <span class="id" title="var">b</span>,<br/>
 &nbsp;&nbsp;<span class="id" title="var">seq_upd</span> (<span class="id" title="var">a</span> :: <span class="id" title="var">l</span>) 0 <span class="id" title="var">b</span> = <span class="id" title="var">b</span> :: <span class="id" title="var">l</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+Admitted since this it must be a pretty trivial property and proving it is outside the scope of this project. 
+</div>
+<div class="code">
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">seq_upd_on_curve</span>: <span class="id" title="keyword">∀</span> <span class="id" title="var">l</span> <span class="id" title="var">i</span> <span class="id" title="var">b</span>,<br/>
 &nbsp;&nbsp;<span class="id" title="var">is_point_on_curve</span> (<span class="id" title="var">snd</span> <span class="id" title="var">b</span>) = <span class="id" title="var">true</span> → <span class="id" title="tactic">∃</span> <span class="id" title="var">l2</span>, <span class="id" title="var">seq_upd</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">l</span>) <span class="id" title="var">i</span> <span class="id" title="var">b</span> = <span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">l2</span>.<br/>
 
 <br/>
 
 <br/>
+</div>
+
+<div class="doc">
+Large helper function that makes the next three properties trivial 
+</div>
+<div class="code">
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">batch_scalar_optimization_induction_helper</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">elems</span> : <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">on_curve_t</span>)),<br/>
 &nbsp;&nbsp;<span class="id" title="var">simple_batch_scalar_multiplication</span> (<span class="id" title="var">batch_scalar_optimization</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>)) = <span class="id" title="var">simple_batch_scalar_multiplication</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>)<br/>
 &nbsp;&nbsp;∧  <span class="id" title="var">length</span> (<span class="id" title="var">batch_scalar_optimization</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>)) = <span class="id" title="var">length</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>)<br/>
@@ -890,6 +1106,12 @@ This file was automatically generated using Hacspec
 &nbsp;&nbsp;<span class="id" title="tactic">∃</span> <span class="id" title="var">l2</span>, <span class="id" title="var">batch_scalar_optimization</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">l</span>) = <span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">l2</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+Equivalence proof between <span class="inlinecode"><span class="id" title="var">batch_scalar_multiplication</span></span> and <span class="inlinecode"><span class="id" title="var">simple_batch_scalar_multiplication</span></span>. 
+</div>
+<div class="code">
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">batch_scalar_mult_def</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">elems</span> :  <span class="id" title="var">seq</span> (<span class="id" title="var">secp256k1_scalar_t</span> × <span class="id" title="var">on_curve_t</span>)),<br/>
 &nbsp;&nbsp;0 ≤ <span class="id" title="var">seq_len</span> <span class="id" title="var">elems</span> ≤ @<span class="id" title="var">max_unsigned</span> <span class="id" title="var">WORDSIZE32</span> →<br/>
 &nbsp;&nbsp;<span class="id" title="var">batch_scalar_multiplication</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>) = <span class="id" title="var">simple_batch_scalar_multiplication</span> (<span class="id" title="var">on_curve_list_to_affines</span> <span class="id" title="var">elems</span>).<br/>

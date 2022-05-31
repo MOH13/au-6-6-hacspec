@@ -14,7 +14,13 @@ Require Import Lia.
 Require Import Znumtheory Field_theory Field.
 From Coqprime Require GZnZ.
 
-(* Set Printing Coercions. *)
+(** 
+This file contains the coq export of the hacspec-secp256k1 implementation and its corresponding proofs.
+*)
+
+(** * hacspec-to-coq definitions *)
+
+(** ** Main curve implementation *)
 
 Definition elem_max := 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F.
 Definition scalar_max := 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141.
@@ -220,7 +226,9 @@ Definition scalar_multiplication
       (q_32))
     q_32 in 
   q_32.
-  
+
+ (**  ** Batch scalar multiplication *) 
+
 Definition batch_scalar_optimization
   (elems_34 : seq (secp256k1_scalar_t × affine_t))
   : seq (secp256k1_scalar_t × affine_t) :=
@@ -270,20 +278,12 @@ Definition batch_scalar_multiplication
     batch_scalar_optimization (elems_46) in 
   product_sum (optimized_47).
 
-Lemma zero_less_than_elem_max: 0 < elem_max.
-Proof.
-  unfold elem_max.
-  intuition.
-Qed.
-
-Lemma zero_less_than_scalar_max: 0 < scalar_max.
-Proof.
-  unfold scalar_max.
-  intuition.
-Qed.
+(** * Notation *)
 
 Notation "p '+'' q" := (add_points p q) (at level 69, left associativity).
 Notation "k '*'' p" := (scalar_multiplication k p) (at level 68, right associativity).
+
+(** * Nat_mod properties *)
 
 Section nat_mod.
 
@@ -294,10 +294,12 @@ Definition nat_mod_eq (a b : nat_mod max) := a = b.
 
 Add Field FZpZ : (GZnZ.FZpZ max max_prime).
 
-Theorem max_pos: 0 < max.
+Lemma max_pos: 0 < max.
   generalize (prime_ge_2 _ max_prime); auto with zarith.
 Qed.
 
+(** ** Field properties *)
+(** Proof of field properties of nat_mod (simple wrapper of GZnZ.znz) *)
 Definition nat_mod_FZpZ: field_theory nat_mod_zero nat_mod_one nat_mod_add nat_mod_mul nat_mod_sub nat_mod_neg nat_mod_div nat_mod_inv (@Logic.eq (nat_mod max)).
 Proof.
   split.
@@ -377,6 +379,8 @@ Proof.
 Qed.
 
 Add Field nat_mod_FZpZ : nat_mod_FZpZ.
+
+(** ** Nat_mod helper lemmas *)
 
 Lemma nat_mod_small: forall (n : nat_mod max), 0 <= n < max.
 Proof.
@@ -598,9 +602,7 @@ Qed.
 
 End nat_mod.
 
-Section uint_size.
-
-End uint_size.
+(** * foldi (for-loop) helper lemmas *)
 
 Section foldi.
 
@@ -934,14 +936,24 @@ Qed.
 
 End foldi.
 
+(** * Field definitions *)
+
+(** p and n are prime (actual proofs needed) *)
+
 Axiom elem_max_prime: prime elem_max.
 Axiom scalar_max_prime: prime scalar_max.
+
+(** Specialize field proof to the two concrete fields *)
 
 Definition field_elem_FZpZ := (nat_mod_FZpZ elem_max elem_max_prime).
 Definition scalar_FZpZ := (nat_mod_FZpZ scalar_max scalar_max_prime).
 
 Add Field field_elem_FZpZ : field_elem_FZpZ.
 Add Field scalar_FZpZ : scalar_FZpZ.
+
+(** * Curve properties *)
+
+(** ** General properties and helper lemmas *)
 
 Lemma field_elem_small: forall (n : secp256k1_field_element_t), 0 <= n < elem_max.
 Proof.
@@ -1145,6 +1157,8 @@ Proof.
       reflexivity.
 Qed.
 
+(** ** Proofs of closed operations *)
+
 Structure on_curve_t: Set:=
  mkoncurve {point: affine_t;
         on_curve: is_point_on_curve point = true }.
@@ -1156,7 +1170,7 @@ Proof.
   intuition.
 Qed.
 
-(* How do we get the actual values? *)
+(** Could not be completed since [nat_mod_from_byte_seq_be] is not defined *)
 Lemma generator_on_curve: is_point_on_curve generator = true.
 Proof.
   unfold is_point_on_curve.
@@ -1297,6 +1311,7 @@ Proof.
   reflexivity.
 Qed.
 
+(** Proofs of remaining cases missing *)
 Lemma add_assoc: forall (p q r : on_curve_t), (p +' q) +' r = p +' (q +' r).
 Proof.
   intros p q r.
@@ -1422,12 +1437,6 @@ Proof.
     reflexivity.
 Qed.
 
-Fixpoint simple_scalar_mult (k : nat) (p : affine_t) : affine_t :=
-  match k with
-  | 0%nat => infinity
-  | S k1  => (simple_scalar_mult k1 p) +' p
-  end.
-
 Lemma double_point_closed: forall (p : on_curve_t), exists (r : on_curve_t), point r = double_point (point p).
 Proof.
 Admitted.
@@ -1489,6 +1498,22 @@ Proof.
     }
   }
 Defined.
+
+(** * Scalar multiplication proofs
+
+General strategy to show equivalences:
+[simple_scalar_mult] <-> [simple_scalar_mult2] <-> [simple_scalar_mult3] <-> [scalar_multiplication].
+
+Missing equivalence proof between [simple_scalar_mult3] and [scalar_multiplication].
+
+*)
+
+(** ** Simple scalar multiplication function 1 *)
+Fixpoint simple_scalar_mult (k : nat) (p : affine_t) : affine_t :=
+  match k with
+  | 0%nat => infinity
+  | S k1  => (simple_scalar_mult k1 p) +' p
+  end.
 
 Lemma simple_scalar_mult_closed: forall (p : on_curve_t) (k : nat), exists (q : on_curve_t), point q = simple_scalar_mult k p.
 Proof.
@@ -1558,6 +1583,7 @@ Proof.
   reflexivity.
 Qed.
 
+(** ** Simple scalar multiplication function 2 *)
 Fixpoint simple_scalar_mult2 (k : positive) (p : affine_t) : affine_t :=
   match k with
   | xH => p
@@ -1567,6 +1593,7 @@ Fixpoint simple_scalar_mult2 (k : positive) (p : affine_t) : affine_t :=
 
 Definition bitlist := list bool.
 
+(** ** Simple scalar multiplication function 3 *)
 Fixpoint simple_scalar_mult3 (l : bitlist) (p acc : affine_t) : affine_t :=
   match l with
   | nil => acc
@@ -1863,6 +1890,8 @@ Proof.
     + rewrite double_infty, add_infty_1. reflexivity.
 Qed.
 
+(** ** [scalar_multiplication] equivalence with function 3 (incomplete) *)
+
 Definition nat_to_scalar (n : nat) : secp256k1_scalar_t.
 Proof.
   unfold secp256k1_scalar_t.
@@ -1958,7 +1987,7 @@ Proof.
     .*)
 Admitted.
 
-(* Follows from Langrange's Theorem  since the order of the group is prime *)
+(** Follows from Langrange's Theorem since the order of the group is prime *)
 Lemma simple_scalar_mult_mod: forall (k : nat) (p: affine_t), simple_scalar_mult k p = simple_scalar_mult (k mod (Z.to_nat scalar_max)) p.
 Proof.
 Admitted.
@@ -2079,6 +2108,8 @@ Lemma scalar_mult_generator_not_zero: forall (a : secp256k1_scalar_t), a <> nat_
 Proof.
 Admitted.
 
+(** * Batch scalar multiplication proofs *)
+
 Fixpoint simple_batch_scalar_multiplication
 (elems : seq (secp256k1_scalar_t × affine_t))
 : affine_t :=
@@ -2101,6 +2132,7 @@ Definition batch_scalar_opt (elems : seq (secp256k1_scalar_t × affine_t)) :=
   | _ => elems
   end.
 
+(** Helper function converting a list of tuples of scalars and points on curve to list of tuples of scalars and corresponding points without the proof. *)
 Fixpoint on_curve_list_to_affines (elems : seq (secp256k1_scalar_t × on_curve_t)) : seq (secp256k1_scalar_t × affine_t) :=
   match elems with
   | (a, P) :: r => (a, point P) :: on_curve_list_to_affines r
@@ -2374,6 +2406,7 @@ Proof.
   rewrite (foldi_equiv _ a b (product_sum_foldi_helper (elems1 ++ elems2)) _ _ H). reflexivity.
 Qed.
 
+(** Equivalence proof between [product_sum] and [simple_batch_scalar_multiplication]. *)
 Lemma product_sum_def: forall (elems : seq (secp256k1_scalar_t × on_curve_t)),
   0 <= seq_len elems <= @max_unsigned WORDSIZE32 -> product_sum (on_curve_list_to_affines elems) = simple_batch_scalar_multiplication (on_curve_list_to_affines elems).
 Proof.
@@ -2483,20 +2516,24 @@ let new_elems_35 :=
     )) in 
 (new_elems_35)).
 
+(** Admitted since this it must be a pretty trivial property and proving it is outside the scope of this project. *)
 Lemma seq_upd_length: forall (A : Type) `{Default A} (l : seq A) i elem, length (seq_upd l i elem) = length l.
 Proof.
 Admitted.
 
+(** Admitted since this it must be a pretty trivial property and proving it is outside the scope of this project. *)
 Lemma seq_upd_split: forall (A : Type) `{Default A} (l1 l2 : seq A) elem,
   seq_upd (l1 ++ l2) (length l1) elem = l1 ++ (seq_upd l2 0 elem).
 Proof.
 Admitted.
 
+(** Admitted since this it must be a pretty trivial property and proving it is outside the scope of this project. *)
 Lemma seq_upd_zero: forall (A : Type) `{Default A} a l b,
   seq_upd (a :: l) 0 b = b :: l.
 Proof.
 Admitted.
 
+(** Admitted since this it must be a pretty trivial property and proving it is outside the scope of this project. *)
 Lemma seq_upd_on_curve: forall l i b,
   is_point_on_curve (snd b) = true -> exists l2, seq_upd (on_curve_list_to_affines l) i b = on_curve_list_to_affines l2.
 Proof.
@@ -2551,6 +2588,7 @@ Proof.
       * simpl. apply Zmod_0_l.
 Qed. *)
 
+(** Large helper function that makes the next three properties trivial *)
 Lemma batch_scalar_optimization_induction_helper: forall (elems : seq (secp256k1_scalar_t × on_curve_t)),
   simple_batch_scalar_multiplication (batch_scalar_optimization (on_curve_list_to_affines elems)) = simple_batch_scalar_multiplication (on_curve_list_to_affines elems)
   /\  length (batch_scalar_optimization (on_curve_list_to_affines elems)) = length (on_curve_list_to_affines elems)
@@ -2763,6 +2801,7 @@ Proof.
   exact H.
 Qed.
 
+(** Equivalence proof between [batch_scalar_multiplication] and [simple_batch_scalar_multiplication]. *)
 Lemma batch_scalar_mult_def: forall (elems :  seq (secp256k1_scalar_t × on_curve_t)),
   0 <= seq_len elems <= @max_unsigned WORDSIZE32 ->
   batch_scalar_multiplication (on_curve_list_to_affines elems) = simple_batch_scalar_multiplication (on_curve_list_to_affines elems).
