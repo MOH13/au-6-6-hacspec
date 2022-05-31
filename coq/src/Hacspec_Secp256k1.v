@@ -1170,7 +1170,7 @@ Proof.
   intuition.
 Qed.
 
-(** Could not be completed since [nat_mod_from_byte_seq_be] is not defined *)
+(** Admitted, could not be completed since [nat_mod_from_byte_seq_be] is not defined *)
 Lemma generator_on_curve: is_point_on_curve generator = true.
 Proof.
   unfold is_point_on_curve.
@@ -1180,6 +1180,7 @@ Proof.
   - simpl.
 Admitted.
 
+(** Admitted, but could be proved using field properties *)
 Lemma same_x_cases: forall (p q : on_curve_t), (fst p = fst q) -> point p = point q \/ point p = neg_point (q).
 Proof.
   intros p q H.
@@ -1311,7 +1312,7 @@ Proof.
   reflexivity.
 Qed.
 
-(** Proofs of remaining cases missing *)
+(** Admitted, proofs of remaining cases missing *)
 Lemma add_assoc: forall (p q r : on_curve_t), (p +' q) +' r = p +' (q +' r).
 Proof.
   intros p q r.
@@ -1437,10 +1438,12 @@ Proof.
     reflexivity.
 Qed.
 
+(** Admitted, could be proved using curve properties *)
 Lemma double_point_closed: forall (p : on_curve_t), exists (r : on_curve_t), point r = double_point (point p).
 Proof.
 Admitted.
 
+(** Admitted, could be proved using curve properties *)
 Lemma add_different_closed: forall (p q : on_curve_t), is_infinity (point p) = false -> is_infinity (point q) = false -> (fst (point p) <> fst (point q)) -> exists r, point r = add_different_points (point p) (point q).
 Proof.
   intros p q H1 H2 H3.
@@ -1955,6 +1958,7 @@ Proof.
   exact H. 
 Qed.
 
+(** Admitted, did not finish *)
 Lemma scalar_mult_def: forall (k : secp256k1_scalar_t) (p : affine_t), k *' p = simple_scalar_mult3 (z_to_bitlist k) p infinity.
 Proof.
   intros k.
@@ -1987,7 +1991,7 @@ Proof.
     .*)
 Admitted.
 
-(** Follows from Langrange's Theorem since the order of the group is prime *)
+(** Admitted, but follows from Langrange's Theorem since the order of the group is prime *)
 Lemma simple_scalar_mult_mod: forall (k : nat) (p: affine_t), simple_scalar_mult k p = simple_scalar_mult (k mod (Z.to_nat scalar_max)) p.
 Proof.
 Admitted.
@@ -2104,6 +2108,7 @@ Proof.
     reflexivity.
 Qed.
 
+(** Admitted, follows from cycling group properties *)
 Lemma scalar_mult_generator_not_zero: forall (a : secp256k1_scalar_t), a <> nat_mod_zero -> is_infinity (a *' generator) = false.
 Proof.
 Admitted.
