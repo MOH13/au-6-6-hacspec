@@ -14,6 +14,19 @@ Require Import Hacspec_Sha256.
 Add Field field_elem_FZpZ : field_elem_FZpZ.
 Add Field scalar_FZpZ : scalar_FZpZ.
 
+(** 
+This file contains the coq export of the hacspec-schnorr-sig-secp256k1-sha256 implementation and its corresponding proofs.
+
+Proven properties of the curve implementation include:
+- [schnorr_correctness]: Proof of correctness for single signatures.
+
+There are currently no proofs of correctness for batch verification or multi-signatures.
+
+*)
+
+
+(** * hacspec-to-coq definitions *)
+
 Definition sign
   (a_0 : secp256k1_scalar_t)
   (a_1 : affine_t)
@@ -63,6 +76,7 @@ Definition verify
   (((v_15) =.? (add_points (gr_24) (c_a_25))) && (is_point_on_curve (
         a_12))) && (negb (is_infinity (a_12))).
 
+(** * Schnorr properties *)
 
 Lemma schnorr_correctness: forall (a v : secp256k1_scalar_t) (m : byte_seq), a <> nat_mod_zero /\ v <> nat_mod_zero -> verify (a *' generator) m (sign a (a *' generator) v m) =  true.
 Proof.

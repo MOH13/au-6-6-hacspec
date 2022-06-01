@@ -51,6 +51,38 @@ This file contains the coq export of the hacspec-secp256k1 implementation and it
 
 <div class="paragraph"> </div>
 
+Some lemmas are admitted. These are all marked with a comment.
+
+<div class="paragraph"> </div>
+
+Proven properties of the curve implementation include:
+<ul class="doclist">
+<li> <span class="inlinecode"><span class="id" title="var">add_infty_1</span>/2</span>: Point at infinity is additive identitity element (left/right).
+
+</li>
+<li> <span class="inlinecode"><span class="id" title="var">add_comm</span></span>: Point addition is commutative.
+
+</li>
+<li> <span class="inlinecode"><span class="id" title="var">add_assoc</span></span>: Point addition is associative.
+
+</li>
+<li> <span class="inlinecode"><span class="id" title="var">scalar_mult_distributivity</span>(2)</span>: Scalar multiplication distributes.
+
+</li>
+<li> <span class="inlinecode"><span class="id" title="var">batch_scalar_mult_def</span></span>: Correctness of batch scalar multiplication.
+
+</li>
+</ul>
+
+<div class="paragraph"> </div>
+
+Additionally, this document includes a variety of helper lemmas for the <span class="inlinecode"><span class="id" title="var">nat_mod</span></span> type and <span class="inlinecode"><span class="id" title="var">foldi</span></span> function.
+
+<div class="paragraph"> </div>
+
+
+<div class="paragraph"> </div>
+
 <a id="lab1"></a><h1 class="section">hacspec-to-coq definitions</h1>
 
 <div class="paragraph"> </div>
@@ -599,12 +631,18 @@ Specialize field proof to the two concrete fields
 </div>
 
 <div class="doc">
-Could not be completed since <span class="inlinecode"><span class="id" title="var">nat_mod_from_byte_seq_be</span></span> is not defined 
+Admitted, could not be completed since <span class="inlinecode"><span class="id" title="var">nat_mod_from_byte_seq_be</span></span> is not defined 
 </div>
 <div class="code">
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">generator_on_curve</span>: <span class="id" title="var">is_point_on_curve</span> <span class="id" title="var">generator</span> = <span class="id" title="var">true</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+Admitted, but could be proved using field properties 
+</div>
+<div class="code">
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">same_x_cases</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> <span class="id" title="var">q</span> : <span class="id" title="var">on_curve_t</span>), (<span class="id" title="var">fst</span> <span class="id" title="var">p</span> = <span class="id" title="var">fst</span> <span class="id" title="var">q</span>) → <span class="id" title="var">point</span> <span class="id" title="var">p</span> = <span class="id" title="var">point</span> <span class="id" title="var">q</span> ∨ <span class="id" title="var">point</span> <span class="id" title="var">p</span> = <span class="id" title="var">neg_point</span> (<span class="id" title="var">q</span>).<br/>
 
 <br/>
@@ -626,7 +664,7 @@ Could not be completed since <span class="inlinecode"><span class="id" title="va
 </div>
 
 <div class="doc">
-Proofs of remaining cases missing 
+Admitted, proofs of remaining cases missing 
 </div>
 <div class="code">
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">add_assoc</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> <span class="id" title="var">q</span> <span class="id" title="var">r</span> : <span class="id" title="var">on_curve_t</span>), (<span class="id" title="var">p</span> +' <span class="id" title="var">q</span>) +' <span class="id" title="var">r</span> = <span class="id" title="var">p</span> +' (<span class="id" title="var">q</span> +' <span class="id" title="var">r</span>).<br/>
@@ -635,9 +673,21 @@ Proofs of remaining cases missing
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">add_to_double</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> : <span class="id" title="var">affine_t</span>), <span class="id" title="var">p</span> +' <span class="id" title="var">p</span> = <span class="id" title="var">double_point</span> <span class="id" title="var">p</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+Admitted, could be proved using curve properties 
+</div>
+<div class="code">
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">double_point_closed</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="tactic">∃</span> (<span class="id" title="var">r</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="var">point</span> <span class="id" title="var">r</span> = <span class="id" title="var">double_point</span> (<span class="id" title="var">point</span> <span class="id" title="var">p</span>).<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+Admitted, could be proved using curve properties 
+</div>
+<div class="code">
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">add_different_closed</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">p</span> <span class="id" title="var">q</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="var">is_infinity</span> (<span class="id" title="var">point</span> <span class="id" title="var">p</span>) = <span class="id" title="var">false</span> → <span class="id" title="var">is_infinity</span> (<span class="id" title="var">point</span> <span class="id" title="var">q</span>) = <span class="id" title="var">false</span> → (<span class="id" title="var">fst</span> (<span class="id" title="var">point</span> <span class="id" title="var">p</span>) ≠ <span class="id" title="var">fst</span> (<span class="id" title="var">point</span> <span class="id" title="var">q</span>)) → <span class="id" title="tactic">∃</span> <span class="id" title="var">r</span>, <span class="id" title="var">point</span> <span class="id" title="var">r</span> = <span class="id" title="var">add_different_points</span> (<span class="id" title="var">point</span> <span class="id" title="var">p</span>) (<span class="id" title="var">point</span> <span class="id" title="var">q</span>).<br/>
 
 <br/>
@@ -868,13 +918,19 @@ Missing equivalence proof between <span class="inlinecode"><span class="id" titl
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">nat_to_scalar_mult</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">a</span> <span class="id" title="var">b</span> : <span class="id" title="var">nat</span>), <span class="id" title="var">nat_to_scalar</span> <span class="id" title="var">a</span> *% <span class="id" title="var">nat_to_scalar</span> <span class="id" title="var">b</span> = <span class="id" title="var">nat_to_scalar</span> (<span class="id" title="var">a</span> × <span class="id" title="var">b</span>).<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+Admitted, did not finish 
+</div>
+<div class="code">
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">scalar_mult_def</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">k</span> : <span class="id" title="var">secp256k1_scalar_t</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">affine_t</span>), <span class="id" title="var">k</span> *' <span class="id" title="var">p</span> = <span class="id" title="var">simple_scalar_mult3</span> (<span class="id" title="var">z_to_bitlist</span> <span class="id" title="var">k</span>) <span class="id" title="var">p</span> <span class="id" title="var">infinity</span>.<br/>
 
 <br/>
 </div>
 
 <div class="doc">
-Follows from Langrange's Theorem since the order of the group is prime 
+Admitted, but follows from Langrange's Theorem since the order of the group is prime 
 </div>
 <div class="code">
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">simple_scalar_mult_mod</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">k</span> : <span class="id" title="var">nat</span>) (<span class="id" title="var">p</span>: <span class="id" title="var">affine_t</span>), <span class="id" title="var">simple_scalar_mult</span> <span class="id" title="var">k</span> <span class="id" title="var">p</span> = <span class="id" title="var">simple_scalar_mult</span> (<span class="id" title="var">k</span> <span class="id" title="var">mod</span> (<span class="id" title="var">Z.to_nat</span> <span class="id" title="var">scalar_max</span>)) <span class="id" title="var">p</span>.<br/>
@@ -895,6 +951,12 @@ Follows from Langrange's Theorem since the order of the group is prime
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">scalar_mult_assoc2</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">a</span> <span class="id" title="var">b</span> : <span class="id" title="var">secp256k1_scalar_t</span>) (<span class="id" title="var">p</span> : <span class="id" title="var">on_curve_t</span>), <span class="id" title="var">a</span> *' <span class="id" title="var">b</span> *' <span class="id" title="var">p</span> = (<span class="id" title="var">a</span> *% <span class="id" title="var">b</span>) *' <span class="id" title="var">p</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+Admitted, follows from cycling group properties 
+</div>
+<div class="code">
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">scalar_mult_generator_not_zero</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">a</span> : <span class="id" title="var">secp256k1_scalar_t</span>), <span class="id" title="var">a</span> ≠ <span class="id" title="var">nat_mod_zero</span> → <span class="id" title="var">is_infinity</span> (<span class="id" title="var">a</span> *' <span class="id" title="var">generator</span>) = <span class="id" title="var">false</span>.<br/>
 
 <br/>

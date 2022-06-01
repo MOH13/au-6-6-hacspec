@@ -44,6 +44,38 @@ This file was automatically generated using Hacspec
 <span class="id" title="keyword">Add</span> <span class="id" title="var">Field</span> <span class="id" title="var">scalar_FZpZ</span> : <span class="id" title="var">scalar_FZpZ</span>.<br/>
 
 <br/>
+</div>
+
+<div class="doc">
+
+<div class="paragraph"> </div>
+
+This file contains the coq export of the hacspec-schnorr-sig-secp256k1-sha256 implementation and its corresponding proofs.
+
+<div class="paragraph"> </div>
+
+Proven properties of the curve implementation include:
+<ul class="doclist">
+<li> <span class="inlinecode"><span class="id" title="var">schnorr_correctness</span></span>: Proof of correctness for single signatures.
+
+</li>
+</ul>
+
+<div class="paragraph"> </div>
+
+There are currently no proofs of correctness for batch verification or multi-signatures.
+
+<div class="paragraph"> </div>
+
+
+<div class="paragraph"> </div>
+
+<a id="lab19"></a><h1 class="section">hacspec-to-coq definitions</h1>
+
+</div>
+<div class="code">
+
+<br/>
 <span class="id" title="keyword">Definition</span> <span class="id" title="var">sign</span><br/>
 &nbsp;&nbsp;(<span class="id" title="var">a_0</span> : <span class="id" title="var">secp256k1_scalar_t</span>)<br/>
 &nbsp;&nbsp;(<span class="id" title="var">a_1</span> : <span class="id" title="var">affine_t</span>)<br/>
@@ -93,6 +125,15 @@ This file was automatically generated using Hacspec
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">scalar_multiplication</span> (<span class="id" title="var">c_as_scalar_23</span>) (<span class="id" title="var">a_12</span>) <span class="id" title="tactic">in</span> <br/>
 &nbsp;&nbsp;(((<span class="id" title="var">v_15</span>) =.? (<span class="id" title="var">add_points</span> (<span class="id" title="var">gr_24</span>) (<span class="id" title="var">c_a_25</span>))) &amp;&amp; (<span class="id" title="var">is_point_on_curve</span> (<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id" title="var">a_12</span>))) &amp;&amp; (<span class="id" title="var">negb</span> (<span class="id" title="var">is_infinity</span> (<span class="id" title="var">a_12</span>))).<br/>
+
+<br/>
+</div>
+
+<div class="doc">
+<a id="lab20"></a><h1 class="section">Schnorr properties</h1>
+
+</div>
+<div class="code">
 
 <br/>
 <span class="id" title="keyword">Lemma</span> <span class="id" title="var">schnorr_correctness</span>: <span class="id" title="keyword">∀</span> (<span class="id" title="var">a</span> <span class="id" title="var">v</span> : <span class="id" title="var">secp256k1_scalar_t</span>) (<span class="id" title="var">m</span> : <span class="id" title="var">byte_seq</span>), <span class="id" title="var">a</span> ≠ <span class="id" title="var">nat_mod_zero</span> ∧ <span class="id" title="var">v</span> ≠ <span class="id" title="var">nat_mod_zero</span> → <span class="id" title="var">verify</span> (<span class="id" title="var">a</span> *' <span class="id" title="var">generator</span>) <span class="id" title="var">m</span> (<span class="id" title="var">sign</span> <span class="id" title="var">a</span> (<span class="id" title="var">a</span> *' <span class="id" title="var">generator</span>) <span class="id" title="var">v</span> <span class="id" title="var">m</span>) =  <span class="id" title="var">true</span>.<br/>

@@ -16,6 +16,18 @@ From Coqprime Require GZnZ.
 
 (** 
 This file contains the coq export of the hacspec-secp256k1 implementation and its corresponding proofs.
+
+Some lemmas are admitted. These are all marked with a comment.
+
+Proven properties of the curve implementation include:
+- [add_infty_1/2]: Point at infinity is additive identitity element (left/right).
+- [add_comm]: Point addition is commutative.
+- [add_assoc]: Point addition is associative.
+- [scalar_mult_distributivity(2)]: Scalar multiplication distributes.
+- [batch_scalar_mult_def]: Correctness of batch scalar multiplication.
+
+Additionally, this document includes a variety of helper lemmas for the [nat_mod] type and [foldi] function.
+
 *)
 
 (** * hacspec-to-coq definitions *)
