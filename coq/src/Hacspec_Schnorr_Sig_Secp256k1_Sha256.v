@@ -24,7 +24,6 @@ There are currently no proofs of correctness for batch verification or multi-sig
 
 *)
 
-
 (** * hacspec-to-coq definitions *)
 
 Definition sign
