@@ -59,7 +59,9 @@ pub fn compute_a_values(L: &Seq<Affine>) -> Seq<Sha256Digest> {
 }
 
 #[allow(non_snake_case)]
-/// Computes the "aggregate" public key from the signers public keys and their respective a values. Assumes L and a are sorted similarly.
+/// Computes the "aggregate" public key from the signers public keys and their respective a values. 
+/// Assumes L and a are sorted similarly.
+/// Based on [MuSig](https://link.springer.com/content/pdf/10.1007/s10623-019-00608-x.pdf)
 pub fn compute_agg_pk(L: &Seq<Affine>, a: &Seq<Sha256Digest>) -> Affine {
     let mut agg_pk = INFINITY();
     for i in 0..L.len() {
@@ -83,7 +85,7 @@ pub fn check_ti_match_Ri(t: Seq<Sha256Digest>, R_seq: Seq<Affine>) -> bool {
 }
 
 #[allow(non_snake_case)]
-/// Computes the aggregate point of all random points used in the MuSig scheme and returns this point
+/// Computes the aggregate point of all random points and returns this point
 pub fn compute_agg_R(R_seq: &Seq<Affine>) -> Affine {
     let mut R = INFINITY();
     for i in 0..R_seq.len() {
@@ -94,7 +96,7 @@ pub fn compute_agg_R(R_seq: &Seq<Affine>) -> Affine {
 }
 
 #[allow(non_snake_case)]
-///Computes the specific signer's s value
+///Computes the specific signer's s value based on [MuSig](https://link.springer.com/content/pdf/10.1007/s10623-019-00608-x.pdf)
 pub fn compute_own_s(
     v: Secp256k1Scalar,
     agg_pk: Affine,
@@ -126,6 +128,7 @@ pub fn compute_own_s(
     s_1
 }
 
+///Computes the aggregate 's' value, by adding all s values of all signers
 pub fn compute_agg_s(s_seq: Seq<Secp256k1Scalar>) -> Secp256k1Scalar {
     let mut s = Secp256k1Scalar::ZERO();
     for i in 0..s_seq.len() {
@@ -134,6 +137,7 @@ pub fn compute_agg_s(s_seq: Seq<Secp256k1Scalar>) -> Secp256k1Scalar {
     s
 }
 
+///Verifies a multi-signature based on [MuSig](https://link.springer.com/content/pdf/10.1007/s10623-019-00608-x.pdf)
 #[allow(non_snake_case)]
 pub fn multi_sig_verify(L: Seq<Affine>, m: &ByteSeq, signature: (Affine, Secp256k1Scalar)) -> bool {
     #[allow(unused_assignments)]
@@ -197,6 +201,7 @@ pub fn concat_byte_seqs_to_single_byte_seq(L_as_bytes: &Seq<ByteSeq>) -> ByteSeq
     L_byte_concat
 }
 
+///Checks that a list of public keys is valid
 #[allow(non_snake_case)]
 pub fn valid_As(As: &Seq<Affine>) -> bool {
     let mut res = true;
@@ -207,7 +212,7 @@ pub fn valid_As(As: &Seq<Affine>) -> bool {
     res
 }
 
-/// Verifies a batch of signatures and corresponding messages based on <https://en.bitcoin.it/wiki/BIP_0340>.
+/// Verifies a batch of signatures and corresponding messages based on [BIP-0340](https://en.bitcoin.it/wiki/BIP_0340).
 #[allow(non_snake_case)]
 pub fn batch_verification(
     m: Seq<ByteSeq>,

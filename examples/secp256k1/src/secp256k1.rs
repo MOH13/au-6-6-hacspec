@@ -131,7 +131,6 @@ pub fn scalar_multiplication(k: Secp256k1Scalar, p: Affine) -> Affine {
 }
 
 /// Helper function to generate an optimized but equivalent input to product_sum.
-/// sdfdsf
 fn batch_scalar_optimization(elems: &Seq<(Secp256k1Scalar, Affine)>) -> Seq<(Secp256k1Scalar, Affine)> {
     let mut new_elems = elems.clone();
     if new_elems.len() == 0 {
