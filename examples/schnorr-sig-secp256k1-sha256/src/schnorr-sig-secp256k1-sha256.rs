@@ -1,6 +1,6 @@
 //! An implementation of Schnorr signatures in the [hacspec](https://github.com/hacspec/hacspec) specification language.
 //! 
-//! Many properties of this library have been proven in [Hacspec_Schnorr_Sig_Secp256k1_Sha256](https://github.com/MOH13/au-6-6-hacspec/blob/main/coq/src/Hacspec_Schnorr_Sig_Secp256k1_Sha256.v) [(documentation)](../../coq/Hacspec_Schorr_Sig_Secp256k1_Sha256.html).
+//! Many properties of this library have been proven in [Hacspec_Schnorr_Sig_Secp256k1_Sha256](https://github.com/MOH13/au-6-6-hacspec/blob/main/coq/src/Hacspec_Schnorr_Sig_Secp256k1_Sha256.v) [(documentation)](../../coq/Hacspec_Schnorr_Sig_Secp256k1_Sha256.html).
 
 use hacspec_lib::*;
 use hacspec_secp256k1::*;
